@@ -1,3 +1,49 @@
+/* General */
+
+.button {
+    border-radius: 25px;
+    background-color: #007bff;
+    color: white;
+    line-height: 50px;
+    font-family: Arial, sans-serif;
+    padding: 0;
+    border: none;
+    justify-content: center;
+    font-size: 24px;
+    width: 150px;
+    margin: 5px;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+
+/* Example Box and Wrapper */
+
+.wrapper {
+    display: flex;
+
+    justify-content: space-between;
+    width: 100%;
+    gap: 2rem;
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.exampleBox {
+    display: flex;
+    height: auto;
+    min-height: 275px;
+    width: 250px;
+    box-shadow: 1px 1px 10px 3px black;
+    border-radius: 10px;
+    justify-content: center;
+    flex-direction: column;
+}
+
+
 /* Transforming Button */
 
 .transforming-button {
@@ -5,17 +51,8 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background-color: #007bff;
-    color: white;
-    line-height: 50px;
     font-size: 24px;
-    font-family: Arial, sans-serif;
     transition: width 0.3s ease, border-radius 0.3s ease;
-    overflow: hidden;
-    white-space: nowrap;
-    padding: 0;
-    border: none;
-    justify-content: center;
   }
   
   .transforming-button:hover {
@@ -45,5 +82,33 @@
   .transforming-button:hover span.transformed-button {
     opacity: 1;
     visibility: visible;
+  }
+
+  /* Holding Button */
+
+  .holding-button {
+    cursor: pointer;
+    transition: background-color 2.0s, transform 0.3s;
+  }
+  
+  .holding-button:active {
+    transform: scale(0.95); /* Small scale animation on click */
+    background-color: #93adc900;
+  }
+
+  /* Progress Bar */
+
+  .progress-bar {
+    width: 100%;
+    background-color: #f3f3f3;
+    border: 1px solid #ccc;
+    height: 5px;
+    margin-top: 10px;
+  }
+  
+  .progress {
+    height: 100%;
+    background-color: #4caf50; /* Green background */
+    transition: width 0.2s;
   }
   

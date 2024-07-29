@@ -12,22 +12,6 @@ code {
     monospace;
 }
 
-.header {
-  height: 100%;
-  object-fit: contain;
-  margin-right: auto;
-}
-
-.nav-menu {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-}
-
-.nav-menu ul {
-  margin: 0;
-}
-
 .main {
   background-color: #282c34;
   min-height: 100vh;
@@ -39,3 +23,35 @@ code {
   color: white;
 }
 
+.full-center {
+  justify-content: center;
+  align-items: center;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.gap-05 {
+  gap: 0.5rem;
+}
+
+.gap-1 {
+  gap: 1rem;
+}
+
+.gap-2 {
+  gap: 2rem;
+}
+
+.space-between {
+  justify-content: space-between;
+}
+
+.space-around {
+  justify-content: space-around;
+}
+
+.align-center {
+  align-items: center;
+}

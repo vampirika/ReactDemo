@@ -1,12 +1,13 @@
 // Header.js
 import React from 'react';
 //import { Link } from 'react-router-dom';
+import './header.css';
 
 const Header = () => {
   return (
-    <header className="App-header-wrapper">
+    <header className="header-wrapper">
         <div className="header">
-          <span>Some Header</span>
+          <span>React Demo</span>
         </div>
 
         <nav className="nav-menu">

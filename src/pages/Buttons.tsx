@@ -1,13 +1,40 @@
 // Contact.js
 import React from 'react';
 import './buttonsPage.css';
+import HoldButton from './HoldButton.tsx';
+
 
 const Buttons = () => {
+    const handleClick = (buttonType: string) => {
+        alert(`${buttonType} button was clicked!`);
+      };
+
+    
+    
+  
   return <div>
-            <button className="transforming-button">
-            <span className="initial-button">+</span>
-            <span className="transformed-button">Add product</span>
-            </button>
+            <div className="wrapper">
+                <div className="exampleBox full-center">
+                    <h4> Standard</h4>
+                    <button className="button" onClick={() => handleClick('Standard')}>
+                        <span>Click me!</span>
+                    </button>
+                </div>
+                
+                <div className="exampleBox full-center">
+                    <h4> Transforming</h4>
+                    <button className="button transforming-button" onClick={() => handleClick('Transform')}>
+                        <span className="initial-button">+</span>
+                        <span className="transformed-button">Add product</span>
+                    </button>
+                </div>
+
+                <div className="exampleBox full-center">
+                    <h4> Hold button</h4>
+                    <HoldButton />
+                    
+                </div>
+            </div>
         </div>;
 };
 
