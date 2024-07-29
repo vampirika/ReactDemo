@@ -1,0 +1,49 @@
+/* Transforming Button */
+
+.transforming-button {
+    display: flex;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    line-height: 50px;
+    font-size: 24px;
+    font-family: Arial, sans-serif;
+    transition: width 0.3s ease, border-radius 0.3s ease;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0;
+    border: none;
+    justify-content: center;
+  }
+  
+  .transforming-button:hover {
+    width: 150px;
+    border-radius: 25px;
+    background-color: #0056b3;
+    font-size: 20px;
+  }
+  
+  .transforming-button span {
+    display: inline-block;
+    transition: opacity 1s ease;
+  }
+  
+  .transforming-button span.transformed-button {
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+  }
+  
+  .transforming-button:hover span.initial-button,
+  .transforming-button:not(:hover) span.transformed-button {
+    opacity: 0;
+    visibility: hidden;
+  }
+  
+  .transforming-button:hover span.transformed-button {
+    opacity: 1;
+    visibility: visible;
+  }
+  
