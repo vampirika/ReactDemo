@@ -1,7 +1,7 @@
 // Header.js
 import React from 'react';
-//import { Link } from 'react-router-dom';
 import './header.css';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   return (
@@ -11,9 +11,10 @@ const Header = () => {
         </div>
 
         <nav className="nav-menu">
-          <ul>Nav Menu 1</ul>
-          <ul>Nav Menu 2</ul>
-        </nav>
+        <Link to="/" >Homepage</Link>
+        <Link to="/about" >About</Link>
+        <Link to="/buttons" >Buttons</Link>
+        </nav> 
 
     </header>
   );
