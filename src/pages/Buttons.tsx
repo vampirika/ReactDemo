@@ -8,9 +8,6 @@ const Buttons = () => {
     const handleClick = (buttonType: string) => {
         alert(`${buttonType} button was clicked!`);
       };
-
-    
-    
   
   return <div>
             <div className="wrapper">
@@ -32,7 +29,6 @@ const Buttons = () => {
                 <div className="exampleBox full-center">
                     <h4> Hold button</h4>
                     <HoldButton />
-                    
                 </div>
             </div>
         </div>;
