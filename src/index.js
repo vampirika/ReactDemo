@@ -1,25 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
 import reportWebVitals from './reportWebVitals';
-
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import Homepage from './pages/Homepage.tsx';
-import About from './pages/About.tsx';
-import Buttons from './pages/Buttons.tsx';
-
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <App />,
-    children: [
-      { path: '/', element: <Homepage /> },
-      { path: '/about',element: <About /> },
-      { path: '/buttons', element: <Buttons /> },
-    ],
-  }
-]);
+import router from './router.jsx';
+import { RouterProvider } from 'react-router-dom';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
