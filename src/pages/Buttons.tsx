@@ -2,6 +2,7 @@
 import React from 'react';
 import './buttonsPage.css';
 import HoldButton from './HoldButton.tsx';
+import HoldButtonProgress from './HoldButtonProgress.tsx';
 
 
 const Buttons = () => {
@@ -10,11 +11,11 @@ const Buttons = () => {
       };
   
   return <div>
-            <div className="wrapper">
+            <div className="wrapper wrap">
                 <div className="exampleBox full-center">
                     <h4> Standard</h4>
                     <button className="button" onClick={() => handleClick('Standard')}>
-                        <span>Click me!</span>
+                        <span>Click me</span>
                     </button>
                 </div>
                 
@@ -29,6 +30,25 @@ const Buttons = () => {
                 <div className="exampleBox full-center">
                     <h4> Hold button</h4>
                     <HoldButton />
+                </div>
+
+                <div className="exampleBox full-center">
+                    <h4> Hold button 2</h4>
+                    <HoldButtonProgress />
+                </div>
+
+                <div className="exampleBox full-center">
+                    <h4> Shine</h4>
+                    <button className="button shining-button" onClick={() => handleClick('Shine')}>
+                        <span>Click me</span>
+                    </button>
+                </div>
+
+                <div className="exampleBox full-center">
+                    <h4> Standard</h4>
+                    <button className="button" onClick={() => handleClick('Standard')}>
+                        <span>Click me</span>
+                    </button>
                 </div>
             </div>
         </div>;

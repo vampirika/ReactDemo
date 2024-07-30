@@ -23,7 +23,6 @@
 
 .wrapper {
     display: flex;
-
     justify-content: space-between;
     width: 100%;
     gap: 2rem;
@@ -53,62 +52,104 @@
     border-radius: 50%;
     font-size: 24px;
     transition: width 0.3s ease, border-radius 0.3s ease;
-  }
+}
   
-  .transforming-button:hover {
-    width: 150px;
-    border-radius: 25px;
-    background-color: #0056b3;
-    font-size: 20px;
-  }
-  
-  .transforming-button span {
-    display: inline-block;
-    transition: opacity 1s ease;
-  }
-  
-  .transforming-button span.transformed-button {
-    opacity: 0;
-    visibility: hidden;
-    position: absolute;
-  }
-  
-  .transforming-button:hover span.initial-button,
-  .transforming-button:not(:hover) span.transformed-button {
-    opacity: 0;
-    visibility: hidden;
-  }
-  
-  .transforming-button:hover span.transformed-button {
-    opacity: 1;
-    visibility: visible;
-  }
+.transforming-button:hover {
+  width: 150px;
+  border-radius: 25px;
+  background-color: #0056b3;
+  font-size: 20px;
+}
 
-  /* Holding Button */
+.transforming-button span {
+  display: inline-block;
+  transition: opacity 1s ease;
+}
 
-  .holding-button {
+.transforming-button span.transformed-button {
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+}
+
+.transforming-button:hover span.initial-button,
+.transforming-button:not(:hover) span.transformed-button {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.transforming-button:hover span.transformed-button {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+/* Holding Button */
+
+.holding-button {
+  cursor: pointer;
+  transition: background-color 2.0s, transform 0.3s;
+}
+
+.holding-button:active {
+  transform: scale(0.95); /* Small scale animation on click */
+  background-color: #93adc900;
+}
+
+.holding-button-progress {
+  cursor: pointer;
+}
+
+
+/* Progress Bar */
+
+.progress-bar {
+  width: 100%;
+  background-color: #f3f3f3;
+  border: 1px solid #ccc;
+  height: 5px;
+  margin-top: 10px;
+}
+
+.progress {
+  height: 100%;
+  background-color: #4caf50; /* Green background */
+  transition: width 0.2s;
+}
+
+
+/* Shine */
+
+.shining-button {
+    color: #fff;
+    background-color: #007bff;
     cursor: pointer;
-    transition: background-color 2.0s, transform 0.3s;
-  }
-  
-  .holding-button:active {
-    transform: scale(0.95); /* Small scale animation on click */
-    background-color: #93adc900;
-  }
+    position: relative;
+    overflow: hidden;
+}
 
-  /* Progress Bar */
+.shining-button::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 30%;
+    height: 200%;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.2) 75%);
+    transform: skewX(-30deg);
+    animation: shine 3s infinite; /* Duration is 3s to include delay */
+    animation-timing-function: linear;
+}
 
-  .progress-bar {
-    width: 100%;
-    background-color: #f3f3f3;
-    border: 1px solid #ccc;
-    height: 5px;
-    margin-top: 10px;
+@keyframes shine {
+  0% {
+      left: -100%;
   }
-  
-  .progress {
-    height: 100%;
-    background-color: #4caf50; /* Green background */
-    transition: width 0.2s;
+  16.33% {
+      left: 120%;
   }
+  100% {
+      left: 120%;
+  }
+}
   
