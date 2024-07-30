@@ -16,11 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Increase file limit
-        run: |
-          ulimit -n 4096
-          echo "File limit set to: $(ulimit -n)"
-
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
@@ -34,12 +29,16 @@ jobs:
 
       - name: Archive build folder
         run: zip -r build.zip build
-      
-      - name: Upload artifact for deployment job
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
-          path: .
+          name: build-artifacts
+          path: |
+            build
+            dist
+          if-no-files-found: ignore  # Add this to prevent errors if no files are found
+          retention-days: 5  # Optional: Set retention days for the artifact
 
   deploy:
     runs-on: ubuntu-latest
