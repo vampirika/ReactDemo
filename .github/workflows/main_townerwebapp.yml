@@ -27,13 +27,26 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
+      - name: List directory contents before archiving
+        run: dir
+
       - name: Archive build folder
         run: |
-          Compress-Archive -Path build -DestinationPath build.zip
+          if (Test-Path -Path build) {
+            Compress-Archive -Path build -DestinationPath build.zip
+          } else {
+            Write-Output "Build directory does not exist."
+            exit 1
+          }
 
       - name: Archive dist folder
         run: |
-          Compress-Archive -Path dist -DestinationPath dist.zip
+          if (Test-Path -Path dist) {
+            Compress-Archive -Path dist -DestinationPath dist.zip
+          } else {
+            Write-Output "Dist directory does not exist."
+            exit 1
+          }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -61,11 +74,22 @@ jobs:
       id-token: write #This is required for requesting the JWT
 
     steps:
-      - name: Download artifact from build job
+      - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: node-app
+          name: build-artifact
       
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-artifact
+
+      - name: Extract build artifact
+        run: unzip build.zip -d build
+
+      - name: Extract dist artifact
+        run: unzip dist.zip -d dist
+        
       - name: Login to Azure
         uses: azure/login@v2
         with:
