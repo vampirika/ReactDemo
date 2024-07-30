@@ -76,5 +76,5 @@ jobs:
         with:
           app-name: 'TownerWebApp'
           slot-name: 'Production'
-          package: build.zip
+          package: build
           
