@@ -27,18 +27,29 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
-      - name: Archive build folder
-        run: zip -r build.zip build
+          - name: Archive build folder
+          run: |
+          Compress-Archive -Path build -DestinationPath build.zip
 
-      - name: Upload artifact
+      - name: Archive dist folder
+        run: |
+          Compress-Archive -Path dist -DestinationPath dist.zip
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
-          path: |
-            build
-            dist
+          name: build-artifact
+          path: build.zip
           if-no-files-found: ignore  # Add this to prevent errors if no files are found
-          retention-days: 5  # Optional: Set retention days for the artifact
+          retention-days: 3  # Optional: Set retention days for the artifact
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifact
+          path: dist.zip
+          if-no-files-found: ignore  # Add this to prevent errors if no files are found
+          retention-days: 3  # Optional: Set retention days for the artifact
 
   deploy:
     runs-on: ubuntu-latest
