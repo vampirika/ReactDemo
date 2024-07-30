@@ -27,23 +27,11 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
-      - name: List directory contents before archiving
-        run: dir
-
-      - name: Archive build folder
-        run: |
-          if (Test-Path -Path build) {
-            Compress-Archive -Path build -DestinationPath build.zip
-          } else {
-            Write-Output "Build directory does not exist."
-            exit 1
-          }
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
-          path: build.zip
+          path: build/
           if-no-files-found: ignore  # Add this to prevent errors if no files are found
           retention-days: 3  # Optional: Set retention days for the artifact
 
@@ -60,7 +48,8 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact    
+          name: build-artifact
+          path: build
         
       - name: Login to Azure
         uses: azure/login@v2
@@ -75,5 +64,5 @@ jobs:
         with:
           app-name: 'TownerWebApp'
           slot-name: 'Production'
-          package: build.zip
+          package: build/
           
