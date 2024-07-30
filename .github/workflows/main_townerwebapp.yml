@@ -39,28 +39,11 @@ jobs:
             exit 1
           }
 
-      - name: Archive dist folder
-        run: |
-          if (Test-Path -Path dist) {
-            Compress-Archive -Path dist -DestinationPath dist.zip
-          } else {
-            Write-Output "Dist directory does not exist."
-            exit 1
-          }
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: build.zip
-          if-no-files-found: ignore  # Add this to prevent errors if no files are found
-          retention-days: 3  # Optional: Set retention days for the artifact
-
-      - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-artifact
-          path: dist.zip
           if-no-files-found: ignore  # Add this to prevent errors if no files are found
           retention-days: 3  # Optional: Set retention days for the artifact
 
@@ -77,18 +60,10 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact
-      
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-artifact
+          name: build-artifact    
 
       - name: Extract build artifact
         run: unzip build.zip -d build
-
-      - name: Extract dist artifact
-        run: unzip dist.zip -d dist
         
       - name: Login to Azure
         uses: azure/login@v2
