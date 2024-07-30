@@ -61,12 +61,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifact    
-
-      - name: Unzip and deploy to Azure
-        run: |
-          unzip build.zip -d ${{ secrets.AZURE_WEBAPP_PATH }}
-        env:
-          AZURE_WEBAPP_PATH: '/home/site/wwwroot'  # or your specific path
         
       - name: Login to Azure
         uses: azure/login@v2
@@ -81,5 +75,5 @@ jobs:
         with:
           app-name: 'TownerWebApp'
           slot-name: 'Production'
-          package: .
+          package: build.zip
           
