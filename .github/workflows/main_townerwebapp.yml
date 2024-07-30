@@ -62,8 +62,11 @@ jobs:
         with:
           name: build-artifact    
 
-      - name: Extract build artifact
-        run: unzip build.zip -d build
+      - name: Unzip and deploy to Azure
+        run: |
+          unzip build.zip -d ${{ secrets.AZURE_WEBAPP_PATH }}
+        env:
+          AZURE_WEBAPP_PATH: '/home/site/wwwroot'  # or your specific path
         
       - name: Login to Azure
         uses: azure/login@v2
