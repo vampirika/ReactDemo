@@ -11,9 +11,8 @@ const Header = () => {
         </div>
 
         <nav className="nav-menu">
-        <Link to="/" >Homepage</Link>
-        <Link to="/about" >About</Link>
-        <Link to="/buttons" >Buttons</Link>
+          <Link to="/" >Homepage</Link>
+          <Link to="/buttons" >Buttons</Link>
         </nav> 
 
     </header>
