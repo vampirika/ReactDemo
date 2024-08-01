@@ -44,7 +44,7 @@ jobs:
         with:
           name: build-artifact
           path: build.zip
-          if-no-files-found: ignore  # Add this to prevent errors if no files are found
+          #if-no-files-found: ignore  # Add this to prevent errors if no files are found
           retention-days: 3  # Optional: Set retention days for the artifact
 
   deploy:
@@ -61,6 +61,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifact    
+
+      - name: List downloaded files
+        run: ls -l
         
       - name: Login to Azure
         uses: azure/login@v2
