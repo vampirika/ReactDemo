@@ -33,7 +33,7 @@ jobs:
       - name: Archive build folder
         run: |
           if (Test-Path -Path build) {
-            Compress-Archive -Path build -DestinationPath build.zip
+            Compress-Archive -Path (Join-Path -Path build -ChildPath '*') -DestinationPath build.zip
           } else {
             Write-Output "Build directory does not exist."
             exit 1
