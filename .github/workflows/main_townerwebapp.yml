@@ -26,12 +26,26 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-      
-      - name: Upload artifact for deployment job
+
+      - name: List directory contents before archiving
+        run: dir
+
+      - name: Archive build folder
+        run: |
+          if (Test-Path -Path build) {
+            Compress-Archive -Path build -DestinationPath build.zip
+          } else {
+            Write-Output "Build directory does not exist."
+            exit 1
+          }
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
-          path: .
+          name: build-artifact
+          path: build.zip
+          #if-no-files-found: ignore  # Add this to prevent errors if no files are found
+          retention-days: 3  # Optional: Set retention days for the artifact
 
   deploy:
     runs-on: ubuntu-latest
@@ -40,14 +54,17 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
+      id-token: write
 
     steps:
-      - name: Download artifact from build job
+      - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: node-app
-      
+          name: build-artifact    
+
+      - name: List downloaded files
+        run: ls -l
+        
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -61,5 +78,5 @@ jobs:
         with:
           app-name: 'TownerWebApp'
           slot-name: 'Production'
-          package: .
+          package: build.zip
           
