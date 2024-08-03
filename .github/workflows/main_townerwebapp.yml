@@ -26,26 +26,12 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-
-      - name: List directory contents before archiving
-        run: dir
-
-      - name: Archive build folder
-        run: |
-          if (Test-Path -Path build) {
-            Compress-Archive -Path (Join-Path -Path build -ChildPath '*') -DestinationPath build.zip
-          } else {
-            Write-Output "Build directory does not exist."
-            exit 1
-          }
-
-      - name: Upload build artifact
+      
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact
-          path: build.zip
-          #if-no-files-found: ignore  # Add this to prevent errors if no files are found
-          retention-days: 3  # Optional: Set retention days for the artifact
+          name: node-app
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
@@ -54,23 +40,20 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write
+      id-token: write #This is required for requesting the JWT
 
     steps:
-      - name: Download build artifact
+      - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact    
-
-      - name: List downloaded files
-        run: ls -l
-        
+          name: node-app
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B0A4EA5B2DB444D19426F6A4975D630D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C4CFAAE3452442E3BD94A203DC6DA983 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C8935B0E762D47DD956C112F412A62C5 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B5421F76DD5446718BA92BCB2B4EC993 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_33B3C0665EE84373B72E7F4176CD8C43 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C8EFE49199E54FA3B1043E7066BC0B96 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -78,5 +61,5 @@ jobs:
         with:
           app-name: 'TownerWebApp'
           slot-name: 'Production'
-          package: build.zip
+          package: .
           
