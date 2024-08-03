@@ -1,6 +1,7 @@
 // Contact.js
 import React from 'react';
 import './imagesPage.css';
+import SpoilerImage from './SpoilerImage.tsx';
 
 
 const ImagesPage = () => {
@@ -19,8 +20,10 @@ const ImagesPage = () => {
                 </div>
 
                 <div className="exampleBoxImage full-center">
-                    <h4> Slide</h4>
-                    <img src="https://placehold.co/300x200" alt="placeholder"></img>
+                    <h4> Spoiler</h4>
+                    <SpoilerImage 
+                        imageUrl="https://placehold.co/300x200"
+                        altText="Placeholder Image"/>
                 </div>    
             </div>
         </div>;

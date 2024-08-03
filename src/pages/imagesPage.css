@@ -24,3 +24,42 @@
 .exampleBoxImage img {
     border-radius: 15px;
 }
+
+/* Spoiler Image */
+
+.spoiler-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.spoiler-cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    text-align: center;
+    z-index: 1;
+    border-radius: 15px;
+}
+
+.spoiler-image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.spoiler-container:not(.revealed) .spoiler-image {
+    filter: blur(5px);
+}
+
+.spoiler-container.revealed .spoiler-cover {
+    display: none;
+}
