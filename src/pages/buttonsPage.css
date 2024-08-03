@@ -22,24 +22,24 @@
 /* Example Box and Wrapper */
 
 .wrapper {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    gap: 2rem;
-    align-items: center;
-    flex-direction: row;
-    justify-content: center;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 2rem;
+  align-items: center;
+  flex-direction: row;
+  justify-content: center;
 }
 
 .exampleBox {
-    display: flex;
-    height: auto;
-    min-height: 275px;
-    width: 250px;
-    box-shadow: 1px 1px 10px 3px black;
-    border-radius: 10px;
-    justify-content: center;
-    flex-direction: column;
+  display: flex;
+  height: auto;
+  min-height: 275px;
+  width: 250px;
+  box-shadow: 1px 1px 10px 3px black;
+  border-radius: 10px;
+  justify-content: center;
+  flex-direction: column;
 }
 
 

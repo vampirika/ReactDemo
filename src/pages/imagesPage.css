@@ -1,0 +1,26 @@
+/* Example Box and Wrapper */
+
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 2rem;
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+}
+  
+.exampleBoxImage {
+    display: flex;
+    height: auto;
+    min-height: 375px;
+    width: 425px;
+    box-shadow: 1px 1px 10px 3px black;
+    border-radius: 10px;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.exampleBoxImage img {
+    border-radius: 15px;
+}
