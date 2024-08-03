@@ -1,11 +1,11 @@
 .header-wrapper {
-    background-color: white;
+    background-color: #282c34;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     font-size: calc(10px + 2vmin);
-    color: #282c34;
+    color: white;
     justify-content: center;
     align-items: center;
     padding: 1rem;
