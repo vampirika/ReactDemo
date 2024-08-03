@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     environment:
-      name: 'production'
+      name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
       id-token: write #This is required for requesting the JWT
@@ -51,14 +51,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B0A4EA5B2DB444D19426F6A4975D630D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C4CFAAE3452442E3BD94A203DC6DA983 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C8935B0E762D47DD956C112F412A62C5 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B5421F76DD5446718BA92BCB2B4EC993 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_33B3C0665EE84373B72E7F4176CD8C43 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C8EFE49199E54FA3B1043E7066BC0B96 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
           app-name: 'TownerWebApp'
-          slot-name: 'production'
+          slot-name: 'Production'
           package: .
+          
