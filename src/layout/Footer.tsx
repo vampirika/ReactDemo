@@ -1,5 +1,6 @@
 import React from 'react';
 import './footer.css';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -7,6 +8,10 @@ const Footer = () => {
         <div className="footer">
           <span>Copyright Ben - 2024</span>
         </div>
+
+        <nav className="nav-menu">
+          <Link to="/gossip" >Fam</Link>
+        </nav> 
     </footer>
   );
 };
