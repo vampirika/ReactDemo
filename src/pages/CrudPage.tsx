@@ -12,7 +12,6 @@ const CrudPage = () => {
   const [visibleCount, setVisibleCount] = useState(5);
   const [toggledElements, setToggledElements] = useState<{ [key: number]: boolean }>({});
 
-  // Toggle the overflow property
   const toggleOverflow = (index: number) => {
     setToggledElements(prevState => ({
       ...prevState,
@@ -35,28 +34,24 @@ const CrudPage = () => {
     setVisibleCount(prevCount => prevCount + 5);
   };
   
-    return <div>
-      <h3 className='wrapper'>Welcome to my CRUD Page.</h3>
-      <div className="wrapper wrap">
-          {posts.slice(0, visibleCount).map((post, index) => (
-            <div className="exampleBoxPost full-center">
-              <h4 className={`post-title ${toggledElements[index] ? 'shown' : 'hidden'}`}
-              onClick={() => toggleOverflow(index)} key={post.id}>{capitalizeFirstLetter(post.title)}</h4>
-              <p>{capitalizeFirstLetter(post.body)}</p>
-            </div>
-          ))}
-          
-          
-      </div>
-          <div className='wrapper mt-20'>
-            {visibleCount < posts.length && (
-              <button className='button' onClick={showMorePosts}>Show More</button>
-            )}
+  return <div>
+    <h3 className='wrapper'>Welcome to my CRUD Page.</h3>
+    <div className="wrapper wrap">
+        {posts.slice(0, visibleCount).map((post, index) => (
+          <div className="exampleBoxPost full-center">
+            <h4 className={`post-title ${toggledElements[index] ? 'shown' : 'hidden'}`}
+            onClick={() => toggleOverflow(index)} key={post.id}>{capitalizeFirstLetter(post.title)}</h4>
+            <p>{capitalizeFirstLetter(post.body)}</p>
           </div>
-
-
-          
-      </div>;
+        ))}
+    </div>
+        
+    <div className='wrapper mt-20'>
+      {visibleCount < posts.length && (
+        <button className='button' onClick={showMorePosts}>Show More</button>
+      )}
+    </div>
+  </div>;
 };
 
 export default CrudPage;

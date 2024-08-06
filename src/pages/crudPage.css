@@ -26,7 +26,6 @@
     font-size: 1.65rem;
 }
 
-
 .shown {
     overflow: visible;
     white-space: normal;
@@ -43,3 +42,6 @@
     max-width: 90%;
 }
 
+.post-title {
+    cursor: pointer;
+}
