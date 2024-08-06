@@ -14,8 +14,8 @@ const ImagesPage = () => {
                 </div>
 
                 <div className="exampleBoxImage full-center">
-                    <h4> Hover</h4>
-                    <img src="https://placehold.co/300x200" alt="placeholder"></img>
+                    <h4>Colour Change</h4>
+                    <img className="pixel-hover"src="images/flower.png" alt="placeholder"></img>
                 </div>
 
                 <div className="exampleBoxImage full-center">
@@ -23,7 +23,12 @@ const ImagesPage = () => {
                     <SpoilerImage 
                         imageUrl="images/flower.png"
                         altText="Placeholder Image"/>
-                </div>    
+                </div>
+
+                <div className="exampleBoxImage full-center">
+                    <h4>Spoiler Hover</h4>
+                    <img className="spoiler-hover"src="images/flower.png" alt="placeholder"></img>
+                </div>  
             </div>
         </div>;
 };

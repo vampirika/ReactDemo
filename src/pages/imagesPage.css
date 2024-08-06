@@ -67,3 +67,28 @@
 .spoiler-container.revealed .spoiler-cover {
     display: none;
 }
+
+.greyscale {
+    filter: grayscale(100%);
+}
+
+/* Pixelation effect (using CSS filter) */
+@keyframes pixelate {
+    0% { filter: none; }
+    50% { filter: blur(10px) grayscale(20%)}
+    100% { filter: blur(0px) grayscale(100%)}
+}
+
+.pixel-hover:hover {
+    animation: pixelate 3s ease-in-out 0s 1 forwards;
+}
+
+.spoiler-hover {
+    filter: blur(20px);
+}
+
+.spoiler-hover:hover {
+    filter: none;
+    transition: 1s ease-in;
+
+}
