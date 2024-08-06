@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
 import Homepage from './pages/Homepage.tsx';
-import Buttons from './pages/Buttons.tsx';
+import Buttons from './pages/ButtonsPage.tsx';
 import ImagesPage from './pages/ImagesPage.tsx';
 import CrudPage from './pages/CrudPage.tsx';
 import Gossip from './pages/Gossip.tsx';

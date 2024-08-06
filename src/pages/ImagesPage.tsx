@@ -1,7 +1,7 @@
 import React from 'react';
 import './imagesPage.css';
-import SpoilerImage from './SpoilerImage.tsx';
-import TransformerImage from './PixelatedImageTransform.tsx';
+import SpoilerImage from '../components/SpoilerImage.tsx';
+import TransformerImage from '../components/PixelatedImageTransform.tsx';
 
 
 const ImagesPage = () => {
