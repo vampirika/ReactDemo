@@ -24,6 +24,10 @@ code {
   padding: 20px;
 }
 
+.flex {
+  display: flex;
+}
+
 .full-center {
   justify-content: center;
   align-items: center;
@@ -63,4 +67,12 @@ code {
 
 .mt-20 {
   margin-top: 20px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
 }
