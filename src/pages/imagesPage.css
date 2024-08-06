@@ -27,6 +27,12 @@
     width: auto;
 }
 
+@media (max-width: 600px) {
+    .exampleBoxImage {
+        width: 100%;
+    }
+}
+
 
 /* Colour Change Hover */
 

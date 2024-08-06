@@ -5,7 +5,7 @@ import PlaySoundButton from '../components/SoundButton.tsx';
 import PasswordProtected from '../components/PasswordProtected.tsx';
 
 const Gossip: React.FC = () => (
-    <PasswordProtected correctPassword="FAM">
+    <PasswordProtected correctPassword="Fam">
         <div>
             <div className="homepage-wrapper">
                 <div className="homepage-box">

@@ -21,6 +21,20 @@
     flex-direction: column;
 }
 
+@media (max-width: 600px) {
+    .exampleBoxPost {
+        width: 60vw;
+    }
+
+    .exampleBoxPost h4 {
+        font-size: 1.5rem;
+    }
+
+    .exampleBoxPost p {
+        font-size: 0.8rem;
+    }
+}
+
 .exampleBoxPost h4 {
     max-width: 90%;
     font-size: 1.65rem;
@@ -40,6 +54,7 @@
 .exampleBoxPost p {
     font-size: 1rem;
     max-width: 90%;
+    text-align: justify;
 }
 
 .post-title {

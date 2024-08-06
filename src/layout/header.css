@@ -41,3 +41,18 @@
   background-color: grey;
   color: white;
 }
+
+@media (max-width: 600px) {
+  .nav-menu {
+    gap: 0;
+    margin-right: 1rem;
+  }
+  
+  .nav-menu a {
+      font-size: 0.8rem;
+  }
+
+  .header span {
+    font-weight: 1rem;
+  }
+}
