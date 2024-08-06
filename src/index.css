@@ -76,3 +76,9 @@ code {
 .mb-20 {
   margin-bottom: 20px;
 }
+
+input {
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px;
+}
