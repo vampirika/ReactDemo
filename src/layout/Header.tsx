@@ -14,6 +14,7 @@ const Header = () => {
           <Link to="/" >Homepage</Link>
           <Link to="/buttons" >Buttons</Link>
           <Link to="/images" >Images</Link>
+          <Link to="/crud" >CRUD</Link>
         </nav> 
 
     </header>

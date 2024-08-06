@@ -1,4 +1,3 @@
-// Contact.js
 import React from 'react';
 import './imagesPage.css';
 import SpoilerImage from './SpoilerImage.tsx';

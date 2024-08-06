@@ -1,0 +1,45 @@
+/* Example Box and Wrapper */
+
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 2rem;
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+}
+  
+.exampleBoxPost {
+    display: flex;
+    height: auto;
+    min-height: 375px;
+    width: 425px;
+    box-shadow: 1px 1px 10px 3px black;
+    border-radius: 10px;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.exampleBoxPost h4 {
+    max-width: 90%;
+    font-size: 1.65rem;
+}
+
+
+.shown {
+    overflow: visible;
+    white-space: normal;
+}
+
+.hidden {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+.exampleBoxPost p {
+    font-size: 1rem;
+    max-width: 90%;
+}
+

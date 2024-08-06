@@ -1,4 +1,3 @@
-// Contact.js
 import React from 'react';
 import './buttonsPage.css';
 import HoldButton from './HoldButton.tsx';
