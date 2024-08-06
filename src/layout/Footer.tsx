@@ -1,11 +1,12 @@
-// Footer.js
 import React from 'react';
-//import { Link } from 'react-router-dom';
+import './footer.css';
 
 const Footer = () => {
   return (
-    <footer>
-        <p>Some footer here - Copyright Ben 2024</p>
+    <footer className="footer-wrapper">
+        <div className="footer">
+          <span>Copyright Ben - 2024</span>
+        </div>
     </footer>
   );
 };
