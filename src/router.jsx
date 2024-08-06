@@ -4,6 +4,7 @@ import Homepage from './pages/Homepage.tsx';
 import Buttons from './pages/Buttons.tsx';
 import ImagesPage from './pages/ImagesPage.tsx';
 import CrudPage from './pages/CrudPage.tsx';
+import Gossip from './pages/Gossip.tsx';
 
 const routes = [
     {
@@ -15,6 +16,7 @@ const routes = [
         { path: '/buttons', element: <Buttons /> },
         { path: '/images', element: <ImagesPage /> },
         { path: '/crud', element: <CrudPage /> },
+        { path: '/gossip', element: <Gossip /> },
       ],
     }
   ];
