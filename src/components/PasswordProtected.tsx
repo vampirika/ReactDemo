@@ -28,13 +28,14 @@ const PasswordProtected: React.FC<PasswordProtectedProps> = ({ correctPassword, 
             ) : (
                 <div>
                     <h2>Please Enter the Password</h2>
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} autoComplete="off">
                         <div className='wrapper'>
                             <input
                                 type="password"
                                 value={inputPassword}
                                 onChange={(e) => setInputPassword(e.target.value)}
                                 placeholder="Enter password"
+                                autoComplete="new-password"
                             />
                             <button className='button' type="submit">Submit</button>
                         </div>
