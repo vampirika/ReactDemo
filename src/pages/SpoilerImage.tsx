@@ -5,7 +5,7 @@ const SpoilerImage = ({ imageUrl, altText }) => {
   const [isRevealed, setIsRevealed] = useState(false);
 
   const handleReveal = () => {
-    setIsRevealed(true);
+    setIsRevealed(prevState => !prevState);
   };
 
   return (
