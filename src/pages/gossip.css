@@ -1,0 +1,7 @@
+.fun-image {
+    height: 300px;
+    width: 300px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 1px 1px 10px 3px black;
+}
