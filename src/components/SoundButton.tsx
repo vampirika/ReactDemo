@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 const PlaySoundButton = ( {soundUrl} ) => {
     const [playing, setPlaying] = useState(false);
     const [volume, setVolume] = useState(1); // Volume ranges from 0 to 1
-    const audioRef = useRef(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const playSound = () => {
         if (audioRef.current) {
@@ -14,14 +14,14 @@ const PlaySoundButton = ( {soundUrl} ) => {
     };
 
     const stopSound = () => {
-        if (audioRef.current) {
+        if (audioRef.current && playing) {
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
             setPlaying(false);
         }
     };
 
-    const adjustVolume = (amount) => {
+    const adjustVolume = (amount: number) => {
         if (audioRef.current) {
             const newVolume = Math.min(Math.max(volume + amount, 0), 1); // Ensure volume is between 0 and 1
             setVolume(newVolume);
