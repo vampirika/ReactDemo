@@ -10,7 +10,7 @@ const ImagesPage = () => {
             <div className="wrapper wrap">
                 <div className="exampleBoxImage full-center">
                     <h4> Standard</h4>
-                    <img src="https://placehold.co/300x200" alt="placeholder"></img>
+                    <img src="images/flower.png" alt="placeholder"></img>
                 </div>
 
                 <div className="exampleBoxImage full-center">
@@ -21,7 +21,7 @@ const ImagesPage = () => {
                 <div className="exampleBoxImage full-center">
                     <h4> Spoiler</h4>
                     <SpoilerImage 
-                        imageUrl="https://placehold.co/300x200"
+                        imageUrl="images/flower.png"
                         altText="Placeholder Image"/>
                 </div>    
             </div>

@@ -23,7 +23,10 @@
 
 .exampleBoxImage img {
     border-radius: 15px;
+    height: 200px;
+    width: auto;
 }
+
 
 /* Spoiler Image */
 
@@ -48,6 +51,7 @@
     text-align: center;
     z-index: 1;
     border-radius: 15px;
+    transform: scale(1.05);
 }
 
 .spoiler-image {
@@ -57,7 +61,7 @@
 }
 
 .spoiler-container:not(.revealed) .spoiler-image {
-    filter: blur(5px);
+    filter: blur(10px);
 }
 
 .spoiler-container.revealed .spoiler-cover {
