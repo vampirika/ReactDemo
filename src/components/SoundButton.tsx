@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 
 const PlaySoundButton = ( {soundUrl} ) => {
     const [playing, setPlaying] = useState(false);
-    const [volume, setVolume] = useState(1); // Volume ranges from 0 to 1
+    const [volume, setVolume] = useState(0.5); // Volume ranges from 0 to 1
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const playSound = () => {
@@ -38,7 +38,7 @@ const PlaySoundButton = ( {soundUrl} ) => {
             <button className="button" onClick={() => adjustVolume(0.1)}>Volume Up</button>
             <audio ref={audioRef} src={soundUrl} />
             <br></br>
-            <span>Volume: {volume.toPrecision(1)}</span>
+            <span>Volume: {(volume * 10).toFixed()} / 10</span>
         </div>
     );
 };
