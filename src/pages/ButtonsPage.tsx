@@ -42,13 +42,6 @@ const Buttons = () => {
                         <span>Click me</span>
                     </button>
                 </div>
-
-                <div className="exampleBox full-center">
-                    <h4> Standard</h4>
-                    <button className="button" onClick={() => handleClick('Standard')}>
-                        <span>Click me</span>
-                    </button>
-                </div>
             </div>
         </div>;
 };

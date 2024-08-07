@@ -41,7 +41,6 @@ const HoldButtonProgress = () => {
   const handleHoldClick = () => {
     console.log(isHolding)
     alert('Button with progress bar held for 2 seconds!');
-    // Add any action you want to perform after the button is held
   };
 
   return (   
