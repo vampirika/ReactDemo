@@ -19,3 +19,7 @@ a:hover {
     border-radius: 10px;
     text-align: justify;
 }
+
+.commit-message {
+    font-size: 1.5rem;
+}

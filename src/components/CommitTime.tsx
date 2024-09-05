@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 function CommitTime() {
   const [commitTime, setCommitTime] = useState('');
+  const [commitMessage, setCommitMessage] = useState('');
 
   useEffect(() => {
     const fetchCommitTime = async () => {
@@ -11,6 +12,7 @@ function CommitTime() {
         if (data && data.length > 0) {
           const latestCommit = data[0];
           const commitDate = new Date(latestCommit.commit.committer.date);
+          setCommitMessage(latestCommit.commit.message);
           setCommitTime(commitDate.toString());
         }
       } catch (error) {
@@ -25,6 +27,7 @@ function CommitTime() {
     <div className='wrapper wrap gap-1'>
       <h4 className='mt-10 mb-10'>Project last updated:</h4>
       <p className='mt-10 mb-10'>{commitTime ? commitTime : 'Loading...'}</p>
+      <p className='mt-10 mb-10 commit-message'>{commitMessage ? `Commit message: `+commitMessage : 'Loading...'}</p>
     </div>
   );
 }
