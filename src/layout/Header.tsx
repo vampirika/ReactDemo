@@ -1,14 +1,29 @@
 // Header.js
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './header.css';
 import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [isRevealed, setIsRevealed] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null); 
   
   const handleReveal = () => {
     setIsRevealed(prevState => !prevState);
   };
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setIsRevealed(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="header-wrapper">
@@ -16,7 +31,7 @@ const Header = () => {
           <span>React Demo</span>
         </div>
 
-        <nav className="navbar">
+        <nav className="navbar" ref={menuRef}>
           <div className="burger-menu" id="burger-menu" onClick={handleReveal}>
               <div className="line"></div>
               <div className="line"></div>
