@@ -6,6 +6,7 @@ import ImagesPage from './pages/ImagesPage.tsx';
 import CrudPage from './pages/CrudPage.tsx';
 import Gossip from './pages/Gossip.tsx';
 import GamesPage from './pages/GamesPage.tsx';
+import ToDoPage from './pages/toDoPage.tsx';
 
 const routes = [
     {
@@ -19,6 +20,7 @@ const routes = [
         { path: '/crud', element: <CrudPage /> },
         { path: '/gossip', element: <Gossip /> },
         { path: '/games', element: <GamesPage /> },
+        { path: '/todo', element: <ToDoPage /> },
       ],
     }
   ];

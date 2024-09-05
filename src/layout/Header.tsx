@@ -29,6 +29,7 @@ const Header = () => {
             <li><Link to="/images" onClick={handleReveal}>Images</Link></li>
             <li><Link to="/crud" onClick={handleReveal}>CRUD</Link></li>
             <li><Link to="/games" onClick={handleReveal}>Games</Link></li>
+            <li><Link to="/todo" onClick={handleReveal}>To Do List</Link></li>
           </ul>
         </nav> 
     </header>

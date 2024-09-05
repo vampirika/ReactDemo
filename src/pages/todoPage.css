@@ -1,0 +1,42 @@
+/* Example Box and Wrapper */
+
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 2rem;
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.todo-wrapper, .todo-box {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    padding: 30px;
+}
+
+.todo-box {
+    width: 90%;
+    box-shadow: 1px 1px 10px 3px black;
+    border-radius: 10px;
+    text-align: justify;
+}
+
+@media (max-width: 600px) {
+    .exampleBoxImage {
+        width: 100%;
+    }
+}
+
+.todo-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.todo-item {
+    display: flex;
+    flex-direction: row;
+}
