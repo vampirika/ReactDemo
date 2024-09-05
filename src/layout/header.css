@@ -11,6 +11,8 @@
     padding: 1rem;
     border-bottom: 1px solid white;
     box-shadow: 1px 1px 10px 3px black;
+    padding-left: 3rem;
+    padding-right: 3rem;
 }
 
 .header {
@@ -50,7 +52,7 @@
   padding: 0;
   padding-top: 10px;
   padding-bottom: 10px;
-  box-shadow: 1px 1px 10px 3px black;
+  box-shadow: 0 0 10px 5px black;
   z-index: 100;
 }
 
@@ -73,7 +75,7 @@
 
 .nav-links.active {
   display: flex;  
-  transform: translate(-15px, 15px);
+  transform: translate(-1rem, 2rem);
 }
 
 .burger-menu {

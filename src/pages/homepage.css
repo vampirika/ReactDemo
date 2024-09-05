@@ -15,7 +15,6 @@ a:hover {
 }
 
 .homepage-box {
-    width: 90%;
     box-shadow: 1px 1px 10px 3px black;
     border-radius: 10px;
     text-align: justify;
