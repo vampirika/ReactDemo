@@ -27,7 +27,7 @@ function CommitTime() {
     <div className='wrapper wrap gap-1'>
       <h4 className='mt-10 mb-10'>Project last updated:</h4>
       <p className='mt-10 mb-10'>{commitTime ? commitTime : 'Loading...'}</p>
-      <p className='mt-10 mb-10 commit-message'>{commitMessage ? `Commit message: `+commitMessage : 'Loading...'}</p>
+      <p className='mt-10 mb-10'>{commitMessage ? `Commit message: ` + commitMessage : 'Loading...'}</p>
     </div>
   );
 }

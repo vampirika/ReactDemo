@@ -1,23 +1,39 @@
 import React, { useEffect, useState } from 'react';
 
+// Define the structure of a Todo item
+interface Todo {
+  text: string;
+  completed: boolean;
+}
+
 const ToDoList: React.FC = () => {
  // State for the list of todos and the current input
-  const [todos, setTodos] = useState<string[]>(() => {
+  const [todos, setTodos] = useState<Todo[]>(() => {
     const savedTodos = localStorage.getItem('todos');
     return savedTodos ? JSON.parse(savedTodos) : [];
   });
+
   const [input, setInput] = useState<string>('');
 
-  const addTodo = () => {
-    if (input.trim() !== '') {
-      const newTodos = [...todos, input];
-      setTodos(newTodos);
-      setInput('');
-    }
-  };
+    // Add a new todo
+    const addTodo = () => {
+      if (input.trim() !== '') {
+        const newTodos = [...todos, { text: input, completed: false }];
+        setTodos(newTodos);
+        setInput('');
+      }
+    };
 
   const removeTodo = (index: number) => {
     const newTodos = todos.filter((_, i) => i !== index);
+    setTodos(newTodos);
+  };
+
+  // Toggle completed state of a todo
+  const toggleTodoCompletion = (index: number) => {
+    const newTodos = todos.map((todo, i) => 
+      i === index ? { ...todo, completed: !todo.completed } : todo
+    );
     setTodos(newTodos);
   };
 
@@ -51,9 +67,10 @@ const ToDoList: React.FC = () => {
 
                 <ul className="todo-list">
                     {todos.map((todo, index) => (
-                    <li className="todo-item" key={index}>
-                        <div>{todo}</div>
-                        <button className="button" onClick={() => removeTodo(index)}>Remove</button>
+                    <li className={`todo-item ${todo.completed ? 'completed-item' : ''}`} key={index}>
+                        <button className="button remove-todo-button" onClick={() => removeTodo(index)}>X</button>
+                        <button className="button complete-todo-button" onClick={() => toggleTodoCompletion(index)}>{todo.completed ? 'Undo' : 'Complete'}</button>
+                        <div>{todo.text}</div>
                     </li>
                     ))}
                 </ul>

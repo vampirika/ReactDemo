@@ -36,11 +36,39 @@
     flex-direction: column;
     width: 100%;
     padding-left: 10px;
+    gap: 1rem;
 }
 
 .todo-item {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
-    gap: 1rem;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 15px;
+    padding-left: 15px;
+    font-size: 1rem;
+}
+
+.completed-item {
+    background-color: rgba(0, 107, 0, 0.3);
+}
+
+.completed-item div {
+    text-decoration: line-through;
+}
+
+.remove-todo-button {
+    line-height: 30px;
+    font-size: 1rem;
+    width: 30px;
+    margin: 5px;
+    background-color: red;
+}
+
+.complete-todo-button {
+    line-height: 30px;
+    font-size: 1rem;
+    width: 80px;
+    margin: 5px;
 }
