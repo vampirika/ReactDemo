@@ -53,17 +53,19 @@ const ToDoList: React.FC = () => {
   return <div>
             <div className="todo-wrapper">
               <div className='todo-box'>
-                <h1>Todo List</h1>
-                <div className="todo-input">
-                    <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Enter a new task"
-                    />
-                    <button className="button" onClick={addTodo}>Add Task</button>
-                </div>
+                <div className="todo-input-box">
+                  <h1>Todo List</h1>
+                  <div className="todo-input-field">
+                      <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Enter a new task"
+                      />
+                      <button className="button" onClick={addTodo}>Add Task</button>
+                  </div>
+              </div>
 
                 <ul className="todo-list">
                     {todos.map((todo, index) => (

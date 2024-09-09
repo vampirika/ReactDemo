@@ -35,7 +35,10 @@ const CrudPage = () => {
   };
   
   return <div>
-    <h3 className='wrapper'>Welcome to my CRUD Page.</h3>
+    <div className='blerb-box'>
+        <div>This page showcases the ability to use an external API to get and display information. It uses json placeholder, found <a href='https://jsonplaceholder.typicode.com/' target="_blank" rel="noreferrer">here</a>, as the endpoint.</div>
+    </div>
+
     <div className="wrapper wrap">
         {posts.slice(0, visibleCount).map((post, index) => (
           <div className="exampleBoxPost full-center">

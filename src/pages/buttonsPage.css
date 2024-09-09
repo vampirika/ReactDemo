@@ -21,16 +21,6 @@
 
 /* Example Box and Wrapper */
 
-.wrapper {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  gap: 2rem;
-  align-items: center;
-  flex-direction: row;
-  justify-content: center;
-}
-
 .exampleBox {
   display: flex;
   height: auto;
@@ -40,6 +30,13 @@
   border-radius: 10px;
   justify-content: center;
   flex-direction: column;
+  flex: 1 1 calc(50% - 20px); /* 2 columns */
+}
+
+@media (min-width: 800px) {
+  .exampleBox {
+    flex: 1 1 calc(30% - 20px); /* 3 columns */
+  }
 }
 
 

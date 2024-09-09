@@ -1,14 +1,4 @@
 /* Example Box and Wrapper */
-
-.wrapper {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    gap: 2rem;
-    align-items: center;
-    flex-direction: row;
-    justify-content: center;
-}
   
 .exampleBoxImage {
     display: flex;
@@ -19,12 +9,14 @@
     border-radius: 10px;
     justify-content: center;
     flex-direction: column;
+    flex: 1 1 calc(50% - 20px);
 }
 
 .exampleBoxImage img {
-    border-radius: 15px;
+    border-radius: 2rem;
     height: 200px;
     width: auto;
+    padding: 1rem;
 }
 
 @media (max-width: 600px) {
@@ -69,8 +61,8 @@
     font-size: 1.2em;
     text-align: center;
     z-index: 1;
-    border-radius: 15px;
-    transform: scale(1.05);
+    border-radius: 2rem;
+    transform: scale(0.975);
 }
 
 .spoiler-image {

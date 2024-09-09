@@ -8,6 +8,10 @@ const ImagesPage = () => {
 
   
   return <div>
+            <div className='blerb-box'>
+                <div>This page displays various interactive image elements.</div>
+            </div>
+
             <div className="wrapper wrap">
                 <div className="exampleBoxImage full-center">
                     <h4> Standard</h4>

@@ -1,24 +1,14 @@
 /* Example Box and Wrapper */
-
-.wrapper {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    gap: 2rem;
-    align-items: center;
-    flex-direction: row;
-    justify-content: center;
-}
-  
 .exampleBoxPost {
     display: flex;
     height: auto;
-    min-height: 375px;
+    min-height: 300px;
     width: 425px;
     box-shadow: 1px 1px 10px 3px black;
     border-radius: 10px;
     justify-content: center;
     flex-direction: column;
+    flex: 1 1 calc(50% - 20px); /* 2 columns */
 }
 
 @media (max-width: 600px) {
