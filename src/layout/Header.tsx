@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './header.css';
 import { Link } from 'react-router-dom';
+import ThemeToggle from '../components/ThemeToggle.tsx';
 
 const Header = () => {
   const [isRevealed, setIsRevealed] = useState(false);
@@ -45,6 +46,7 @@ const Header = () => {
             <li><Link to="/crud" onClick={handleReveal}>CRUD</Link></li>
             <li><Link to="/games" onClick={handleReveal}>Games</Link></li>
             <li><Link to="/todo" onClick={handleReveal}>To Do List</Link></li>
+            <li><ThemeToggle /></li>
           </ul>
         </nav> 
     </header>
