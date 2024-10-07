@@ -97,24 +97,24 @@
 /* Shine */
 
 .shining-button {
-    color: var(--text-color);
-    background-color: var(--primary-color);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
+  color: var(--text-color);
+  background-color: var(--primary-color);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
 .shining-button::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 30%;
-    height: 200%;
-    background: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.2) 75%);
-    transform: skewX(-30deg);
-    animation: shine 3s infinite; /* Duration is 3s to include delay */
-    animation-timing-function: linear;
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 30%;
+  height: 200%;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.2) 75%);
+  transform: skewX(-30deg);
+  animation: shine 3s infinite; /* Duration is 3s to include delay */
+  animation-timing-function: linear;
 }
 
 @keyframes shine {
@@ -128,4 +128,3 @@
       left: 120%;
   }
 }
-  

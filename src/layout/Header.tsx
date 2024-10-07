@@ -46,6 +46,7 @@ const Header = () => {
             <li><Link to="/crud" onClick={handleReveal}>CRUD</Link></li>
             <li><Link to="/games" onClick={handleReveal}>Games</Link></li>
             <li><Link to="/todo" onClick={handleReveal}>To Do List</Link></li>
+            <li><Link to="/cardsandscrolls" onClick={handleReveal}>Cards and Scrolls</Link></li>
             <li><ThemeToggle /></li>
           </ul>
         </nav> 

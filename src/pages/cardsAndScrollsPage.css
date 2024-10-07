@@ -1,0 +1,144 @@
+/* Example Box and Wrapper */
+
+.exampleBoxCard {
+  display: flex;
+  height: auto;
+  min-height: 375px;
+  width: 1000px;
+  box-shadow: 1px 1px 10px 3px black;
+  border-radius: 10px;
+  justify-content: center;
+  flex-direction: column;
+  flex: 1 1 calc(50% - 20px); /* 2 columns */
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .exampleBoxCard {
+      width: 100%;
+  }
+}
+
+
+/* Hovering images */
+
+.list {
+  display: flex;
+  transform-style: preserve-3d;
+  transform: perspective(1000px);
+}
+
+.small-item img {
+  height: 200px;
+  width: 120px;
+}
+
+.list .small-item {
+  transition: 0.5s;
+  filter: brightness(0.2);
+}
+
+.list .small-item:hover {
+  filter: brightness(1);
+  transform: translateZ(100px);
+}
+
+.list .small-item:hover + * {
+  filter: brightness(0.6);
+  transform: translateZ(100px);
+}
+
+.list .small-item:hover + * + * {
+  filter: brightness(0.3);
+  transform: translateZ(50px);
+}
+
+.list .small-item:has(+ *:hover) {
+  filter: brightness(0.6);
+  transform: translateZ(100px);
+}
+
+.list .small-item:has(+ * + *:hover) {
+  filter: brightness(0.3);
+  transform: translateZ(50px);
+}
+
+
+/* Scrolling images */
+
+.list-two {
+  display: flex;
+  overflow-x: scroll;
+  height: auto;
+  width: 200px;
+  gap: 20px;
+  scroll-snap-type: x mandatory;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.list-two::-webkit-scrollbar-track {
+  border: 1px solid var(--text-color);
+  padding: 2px 0;
+  background-color: var(--background-color);
+  border-radius: 10px;
+}
+
+.list-two::-webkit-scrollbar {
+  width: 10px;
+}
+
+.list-two::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: var(--background-color);
+  border: 1px solid var(--text-color);
+}
+
+.item {
+  scroll-snap-align: center;
+  height: 320px;
+  width: 200px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  background: var(--background-color);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.item img {
+  height: 300px;
+  width: 180px;
+  border-radius: 10px;
+}
+
+/* Multicolour border 
+background-image: conic-gradient(red, orange, yellow, green, blue, indigo, violet, red);
+
+
+.card {
+  margin: 0 auto;
+  padding: 2em;
+  width: 300px;
+  background: black;
+  text-align: center;
+  border-radius: 10px;
+  position: relative;
+}
+
+.card::after, .card::before {
+  content: '';
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background: white;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  padding: 3px;
+  z-index: -1;
+}
+
+.card::before{
+  filter:blur(1.5rem);
+  opacity: 0.5;
+}*/
