@@ -1,4 +1,4 @@
-// src/SnakeGame.js
+// src/GameSnake.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const SPEEDS = {
@@ -7,7 +7,7 @@ const SPEEDS = {
     FAST: { label: 'Fast', value: 50 }
   };
 
-const SnakeGame = () => {
+const GameSnake = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [snake, setSnake] = useState([{ x: 10, y: 10 }]);
   const [food, setFood] = useState({ x: 15, y: 15 });
@@ -149,4 +149,4 @@ const SnakeGame = () => {
   );
 };
 
-export default SnakeGame;
+export default GameSnake;

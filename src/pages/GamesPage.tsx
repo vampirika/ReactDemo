@@ -1,11 +1,13 @@
 // Games.js
 import React, { useState } from 'react';
-import SnakeGame from '../components/SnakeGame.tsx';
+import GameSnake from '../components/GameSnake.tsx';
 import './gamesPage.css';
+import GameNumbers from '../components/GameNumbers.tsx';
 
 const GAMES = {
     SNAKE: { label: 'Snake', value: 1 },
-    OTHER: { label: 'Other', value: 2 }
+    NUMBERS: { label: 'Numbers', value: 2 },
+    OTHER: { label: 'Other', value: 3 }
   };
 
 const GamesPage = () => {
@@ -19,7 +21,9 @@ const handleSelectGame = (game: keyof typeof GAMES) => {
 const renderContent = () => {
     switch (gameSelected.label) {
         case 'Snake':
-        return <div className="wrapper wrap"><SnakeGame /></div>;
+        return <div className="wrapper wrap"><GameSnake /></div>;
+        case 'Numbers':
+        return <div className="wrapper wrap"><GameNumbers /></div>;
         case 'Other':
         return <div className="wrapper wrap"><div>Other game example</div></div>;
         default:
@@ -31,6 +35,8 @@ const renderBlerbContent = () => {
     switch (gameSelected.label) {
         case 'Snake':
         return <div>Use arrow keys to move the green snake and eat the red pieces of food. Do not crash into the wall or your own snake body!</div>;
+        case 'Numbers':
+        return <div>Numbers games for Noa</div>;
         case 'Other':
         return <div>Other game instructions</div>;
         default:
@@ -46,8 +52,9 @@ return <div>
                 </div>
             </div>
 
-            <button className="button" onClick={() => handleSelectGame('SNAKE')}>{GAMES.SNAKE.label}</button>
-            <button className="button" onClick={() => handleSelectGame('OTHER')}>{GAMES.OTHER.label}</button>
+            {Object.entries(GAMES).map(([gameKey, game]) => (
+                <button key={gameKey} className="button"  onClick={() => handleSelectGame(gameKey as keyof typeof GAMES)}>{game.label}</button>
+            ))}
             
             {renderContent()}
         </div>;
