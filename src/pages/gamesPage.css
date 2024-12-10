@@ -25,6 +25,13 @@
   min-width: 400px;
 }
 
+@media (max-width: 600px) {
+  .game-title{
+    min-width: 200px;
+  }
+}
+
+
 /* Player Display, Score, Lives */
 
 .player-display {
@@ -46,6 +53,7 @@
   height: 30px;
   margin: 0 5px;
 }
+
 
 /* Question */
 
@@ -96,17 +104,27 @@
   height: 60px; 
 }
 
-/* Optional: Responsive adjustments */
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .question-container {
-    flex-direction: column; /* Stack vertically on small screens */
-    align-items: stretch; /* Stretch each section */
+    flex-direction: column;
+    flex-basis: 95%;
+  }
+
+  .question-container-part {
+    max-width: none;
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+
+  .question-image {
+    width: 48px;
   }
 
   .question-container-operator {
-    flex: 0 0 auto; /* Allow auto-sizing for operator */
+    flex: 0 0 auto;
   }
 }
+
 
 /* Answers */
 
@@ -117,7 +135,7 @@
   justify-content: center;
   gap: 20px;
   max-width: 95%;
-  margin: 0 auto;
+  margin: 20px auto;
 }
 
 .answer-card {
@@ -135,12 +153,18 @@
 }
 
 .answer-card:disabled {
-  background-color: #f44336; /* Red background for incorrect answers */
+  background-color: #f44336;
   color: #fff;
   pointer-events: none;
   cursor: not-allowed;
 }
-  
+
+@media (max-width: 600px) {
+  .answers-container {
+    flex-basis: 75%;
+  }
+}
+
 .notification {
   font-weight: bold;
   color: #d32f2f;

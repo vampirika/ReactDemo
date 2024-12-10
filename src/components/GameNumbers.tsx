@@ -11,6 +11,12 @@ const GameNumbers = () => {
   ]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const [useImages, setUseImages] = useState(true);
+
+  // Handle checkbox toggle
+  const handleToggleDisplay = (e) => {
+    setUseImages(e.target.checked);
+  };
   const LivesDisplay = ({ lives }: { lives: number }) => {
     return (
       <div className="lives-container">
@@ -44,7 +50,7 @@ const GameNumbers = () => {
     localStorage.setItem("scoreHistory", JSON.stringify(scoreHistory)); // Save score history
   }, [scoreHistory]);
 
-  // Generate a random number between 1 and 9
+  // Generate a random number between x and y
   const getRandomNumber = (min: number = 1, max: number = 5) => 
     Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -110,8 +116,14 @@ const GameNumbers = () => {
         <LivesDisplay lives={lives} />
         <p>Score: {score}</p>
       </div>
-      
-      <QuestionDisplay num1={currentSum.num1} num2={currentSum.num2} />
+
+      {useImages ? (
+        <QuestionDisplay num1={currentSum.num1} num2={currentSum.num2} />
+      ) : (
+        <div className="question-container">
+          <h2>{currentSum.num1} + {currentSum.num2}</h2>
+        </div>
+      )}
 
       {notification && <p className="notification">{notification}</p>}
       <div className='answers-container'>
@@ -126,9 +138,16 @@ const GameNumbers = () => {
           </button>
         ))}
       </div>
+      
+      <div style={{ margin: "35px 3px" }}>
+        <label>
+          <input type="checkbox" checked={useImages} onChange={handleToggleDisplay} />
+          Display question with images
+        </label>
+        <p>High Score: {highScore}</p>
+        <p>Score History: {scoreHistory.slice(-5).join(", ")}</p>
+      </div>
 
-      <p>High Score: {highScore}</p>
-      <p>Score History: {scoreHistory.slice(-5).join(", ")}</p>
     </div>
   );
 };
