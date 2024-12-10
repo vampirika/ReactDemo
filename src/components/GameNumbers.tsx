@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import QuestionDisplay from './GameQuestionDisplay.tsx';
 
 const GameNumbers = () => {
-  const [currentSum, setCurrentSum] = useState({ question: "2 + 2", correctAnswer: 4 });
+  const [currentSum, setCurrentSum] = useState({ num1: 2, num2: 2, correctAnswer: 4 });
   const [options, setOptions] = useState<{ value: number; disabled: boolean }[]>([
     { value: 1, disabled: false },
     { value: 4, disabled: false },
@@ -26,6 +27,7 @@ const GameNumbers = () => {
       </div>
     );
   };
+
   const [highScore, setHighScore] = useState<number>(
     () => parseInt(localStorage.getItem("highScore") || "0", 10) // Default to 0
   );
@@ -69,7 +71,7 @@ const GameNumbers = () => {
     .sort(() => Math.random() - 0.5) // Shuffle options
     .map((value) => ({ value, disabled: false })); // Add `disabled: false`
 
-    setCurrentSum({ question: `${num1} + ${num2}`, correctAnswer });
+    setCurrentSum({ num1, num2, correctAnswer });
     setOptions(allOptions);
   };
 
@@ -108,9 +110,9 @@ const GameNumbers = () => {
         <LivesDisplay lives={lives} />
         <p>Score: {score}</p>
       </div>
-
       
-      <h4>What is {currentSum.question}?</h4>
+      <QuestionDisplay num1={currentSum.num1} num2={currentSum.num2} />
+
       {notification && <p className="notification">{notification}</p>}
       <div className='answers-container'>
         {options.map((option, index) => (
