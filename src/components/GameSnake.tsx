@@ -128,7 +128,8 @@ const GameSnake = () => {
   };
 
   return (
-    <div>
+    <div className='game-wrapper'>
+      <h2 className='game-title'>Snake Game</h2>
       <canvas
         ref={canvasRef}
         width={`${canvasSize.width}px`}
