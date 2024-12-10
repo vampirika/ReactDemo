@@ -15,9 +15,17 @@ const QuestionDisplay = ({ num1, num2 }: { num1: number; num2: number }) => {
 
   return (
     <div className="question-container">
-      {renderImages(num1, "/images/noa.jpg", "Heart")}
-      <span className="question-addition-sign">+</span>
-      {renderImages(num2, "/images/flower.png", "Flower")}
+        <div className="question-container-part">
+            {renderImages(num1, "/images/noa.jpg", "Heart")}
+        </div>
+        <div className="question-container-operator">
+            <span className="question-addition-sign">+</span>
+        </div>
+        <div className="question-container-part">
+            {renderImages(num2, "/images/vertical_flower_1.jpg", "Flower")}
+        </div>
+      
+      
     </div>
   );
 };

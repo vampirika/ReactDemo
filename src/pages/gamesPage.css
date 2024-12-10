@@ -63,10 +63,27 @@
   padding-bottom: 20px;
 }
 
+.question-container-part {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1; 
+  max-width: 45%; 
+  min-width: 20%; 
+  gap: 10px; 
+  justify-content: center; 
+}
+
+.question-container-operator {
+  flex: 0 0 10%;
+  text-align: center;
+}
+
 .question-image {
-  width: 50px;
-  height: 50px;
+  width: 64px;
+  height: auto;
   margin: 0 2px;
+  flex-basis: 33%;
+  border-radius: 10px;
 }
 
 .question-addition-sign {
@@ -75,8 +92,20 @@
   align-items: flex-end;
   margin: 0 5px;
   font-size: 3rem;
-  width: 50px;
-  height: 50px; 
+  width: 60px;
+  height: 60px; 
+}
+
+/* Optional: Responsive adjustments */
+@media (max-width: 600px) {
+  .question-container {
+    flex-direction: column; /* Stack vertically on small screens */
+    align-items: stretch; /* Stretch each section */
+  }
+
+  .question-container-operator {
+    flex: 0 0 auto; /* Allow auto-sizing for operator */
+  }
 }
 
 /* Answers */
