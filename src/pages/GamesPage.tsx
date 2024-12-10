@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import GameSnake from '../components/GameSnake.tsx';
 import './gamesPage.css';
 import GameNumbers from '../components/GameNumbers.tsx';
+import GameWords from '../components/GameWords.tsx';
 
 const GAMES = {
     SNAKE: { label: 'Snake', value: 1 },
@@ -26,7 +27,7 @@ const renderContent = () => {
         case 'Numbers':
         return <div className="wrapper wrap"><GameNumbers /></div>;
         case 'Words':
-        return <div className="wrapper wrap"><div>Word game WIP</div></div>;
+        return <div className="wrapper wrap"><GameWords /></div>;
         case 'Other':
         return <div className="wrapper wrap"><div>Other game example</div></div>;
         default:

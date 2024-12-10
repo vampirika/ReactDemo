@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import QuestionDisplay from './GameQuestionDisplay.tsx';
+import LivesDisplay from './GameLivesDisplay.tsx';
 
 const GameNumbers = () => {
   const [currentSum, setCurrentSum] = useState({ num1: 2, num2: 2, correctAnswer: 4 });
@@ -17,37 +18,21 @@ const GameNumbers = () => {
   const handleToggleDisplay = (e) => {
     setUseImages(e.target.checked);
   };
-  const LivesDisplay = ({ lives }: { lives: number }) => {
-    return (
-      <div className="lives-container">
-        Lives:
-        {Array.from({ length: lives }).map((_, index) => (
-          <img
-            key={index}
-            src="/images/noa.jpg"
-            alt="Life"
-            className="life-icon"
-            style={{ width: "50px", height: "50px", margin: "0 3px" }} // Adjust size and spacing as needed
-          />
-        ))}
-      </div>
-    );
-  };
 
   const [highScore, setHighScore] = useState<number>(
-    () => parseInt(localStorage.getItem("highScore") || "0", 10) // Default to 0
+    () => parseInt(localStorage.getItem("highScoreNumbers") || "0", 10) // Default to 0
   );
   const [scoreHistory, setScoreHistory] = useState<number[]>(
-    () => JSON.parse(localStorage.getItem("scoreHistory") || "[]") // Default to empty array
+    () => JSON.parse(localStorage.getItem("scoreHistoryNumbers") || "[]") // Default to empty array
   );
   const [notification, setNotification] = useState<string>("");
 
   useEffect(() => {
-    localStorage.setItem("highScore", highScore.toString()); // Save high score
+    localStorage.setItem("highScoreNumbers", highScore.toString()); // Save high score
   }, [highScore]);
   
   useEffect(() => {
-    localStorage.setItem("scoreHistory", JSON.stringify(scoreHistory)); // Save score history
+    localStorage.setItem("scoreHistoryNumbers", JSON.stringify(scoreHistory)); // Save score history
   }, [scoreHistory]);
 
   // Generate a random number between x and y
