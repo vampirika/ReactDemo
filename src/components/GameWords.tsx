@@ -3,11 +3,11 @@ import React, { useEffect, useState } from 'react';
 import LivesDisplay from './GameLivesDisplay.tsx';
 
 const GameWords = () => {
-  const wordsList = [
+  const wordsList = React.useMemo( () => [
     { word: "dog", images: ["/images/gossipguys.png", "/images/gossipguys.png"] },
     { word: "cat", images: ["/images/noa.jpg", "/images/noa.jpg"] },
     { word: "flower", images: ["/images/flower.png", "/images/flower2.png"] },
-  ];
+  ], []);
 
   const [prompt, setPrompt] = useState<{ word: string; images: string[] } | null>(null);
   const [options, setOptions] = useState<{ word: string; image: string; correct: boolean; disabled: boolean }[]>([]);
@@ -16,7 +16,7 @@ const GameWords = () => {
   //const [useImages, setUseImages] = useState(true);
 
   // Initialize game
-  const initializeGame = () => {
+  const initializeGame = React.useCallback(() => {
     const randomPrompt = wordsList[Math.floor(Math.random() * wordsList.length)];
 
   // Generate options
@@ -46,12 +46,11 @@ const GameWords = () => {
 
     setPrompt(randomPrompt);
     setOptions(shuffledOptions);
-  };
+  }, [wordsList]);
   
-  // Initialize game on first render
-  React.useEffect(() => {
+  useEffect(() => {
     initializeGame();
-  }, []);
+  }, [initializeGame]);
 
   const [highScore, setHighScore] = useState<number>(
     () => parseInt(localStorage.getItem("highScoreWords") || "0", 10) // Default to 0
