@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import QuestionDisplay from './GameQuestionDisplay.tsx';
+//import QuestionDisplay from './GameQuestionDisplay.tsx';
 import LivesDisplay from './GameLivesDisplay.tsx';
 
 const GameWords = () => {
@@ -86,6 +86,10 @@ const GameWords = () => {
         setLives((prevLives) => prevLives - 1);
         setNotification("Incorrect! A life was lost.");
       } else {
+        if (score > highScore) {
+          setHighScore(score);
+        }
+        setScoreHistory([...scoreHistory, score]);
         setNotification("Game Over! Restarting...");
         setLives(3);
         setScore(0);
