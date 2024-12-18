@@ -104,6 +104,12 @@
   height: 60px; 
 }
 
+.prompt-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 @media (max-width: 700px) {
   .question-container {
     flex-direction: column;

@@ -4,8 +4,8 @@ import LivesDisplay from './GameLivesDisplay.tsx';
 
 const GameWords = () => {
   const wordsList = React.useMemo( () => [
-    { word: "dog", images: ["/images/gossipguys.png", "/images/gossipguys.png"] },
-    { word: "cat", images: ["/images/noa.jpg", "/images/noa.jpg"] },
+    { word: "dog", images: ["/images/dog.jpg", "/images/dog.jpg"] },
+    { word: "cat", images: ["/images/cat.jpg", "/images/cat.jpg"] },
     { word: "flower", images: ["/images/flower.png", "/images/flower2.png"] },
   ], []);
 
@@ -117,16 +117,17 @@ const GameWords = () => {
         <LivesDisplay lives={lives} />
         <p>Score: {score}</p>
       </div>
-      <h2>Question: What is this: x</h2>
-      {/* Display prompt */}
-      {prompt && (
-        <div className="prompt">
-          <p>Match this:</p>
-          <img src={prompt.images[0]} alt={prompt.word} style={{ width: "150px" }} />
-        </div>
-      )}
 
-      {notification && <p className="notification">{notification}</p>}
+      <div className='prompt-container'>
+        {notification && <p className="notification">{notification}</p>}
+
+        {prompt && (
+          <div className="prompt">
+            <p>Match this:</p>
+            <img src={prompt.images[0]} alt={prompt.word} style={{ width: "150px" }} />
+          </div>
+        )}
+      </div>
 
       <div className='answers-container'>
       {options.map((option, index) => (
