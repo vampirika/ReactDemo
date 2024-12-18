@@ -24,7 +24,7 @@ function ThemeToggle() {
 
   return (
     <div>
-      <button className='small-button' onClick={toggleTheme}>
+      <button className='theme-toggle-button' onClick={toggleTheme}>
         Switch to {theme === 'light' ? 'Dark' : 'Light'} Theme
       </button>
     </div>

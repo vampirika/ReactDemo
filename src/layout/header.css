@@ -61,7 +61,6 @@
 }
 
 .nav-links a {
-  color: var(--text-color);
   text-decoration: none;
   display: block;
   border-radius: 15px;
@@ -76,6 +75,21 @@
 .nav-links.active {
   display: flex;  
   transform: translate(-1rem, 2rem);
+}
+
+.theme-toggle-button {
+  text-align: left; 
+  background-color: var(--background-color-header-footer);
+  color: var(--text-color);
+  margin: 0 5px;
+  border: none;
+  border-radius: 15px;
+  line-height: 1.5;
+  font-size: calc(10px + 1.65vmin);
+}
+
+.theme-toggle-button:hover {
+  background-color: var(--background-color);
 }
 
 .burger-menu {
