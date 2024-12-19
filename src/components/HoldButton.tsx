@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 
 const HoldButton = () => {
   const [isHolding, setIsHeld] = useState(false);
-  const holdTimeout = useRef(0);
+  const holdTimeout = useRef<NodeJS.Timeout | number | null>(null);
 
   const handleMouseDown = () => {
     setIsHeld(true);
@@ -14,7 +14,8 @@ const HoldButton = () => {
 
   const handleMouseUp = () => {
     if (holdTimeout.current) {
-        clearTimeout(holdTimeout.current);
+      clearTimeout(holdTimeout.current as number); // Explicit cast for TypeScript
+      holdTimeout.current = null; // Reset to null for safety
     }
     setIsHeld(false);
   };

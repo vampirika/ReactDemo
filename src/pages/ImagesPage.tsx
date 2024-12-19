@@ -19,7 +19,7 @@ const ImagesPage = () => {
                 </div>
 
                 <div className="exampleBoxImage full-center">
-                    <h4>Colour Change</h4>
+                    <h4>Colour Change Hover</h4>
                     <img className="colour-change"src="images/flower.png" alt="placeholder"></img>
                 </div>
 

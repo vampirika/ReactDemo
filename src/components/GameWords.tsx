@@ -118,8 +118,7 @@ const GameWords = () => {
   useEffect(() => {
     if (notification === "Great job! Moving to the next round...") {
       const timeout = setTimeout(() => {
-        setIsNotificationHidden(true);  // Trigger CSS transition
-  // Clean up after animation
+        setIsNotificationHidden(true);
       }, 2000);
 
       return () => clearTimeout(timeout);  // Cleanup timeout
@@ -188,7 +187,7 @@ const GameWords = () => {
 
   return (
     <div className='game-wrapper'>
-      <h2 className='game-title'>Numbers Game</h2>
+      <h2 className='game-title'>Word Match Game</h2>
       <div className='player-display'>
         <LivesDisplay lives={lives} />
         <p>Score: {score}</p>

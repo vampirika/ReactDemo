@@ -11,8 +11,7 @@ const Homepage = () => {
 
             <p>It uses a CI/CD structure; I develop locally and push to github which automatically runs a deployment 
             to an azure static web app that hosts the website online, from which you are viewing this.
-            I have also created a CRUD app in Angular with a mock server that
-            can be found on my github <a href="https://github.com/vampirika" target="_blank" rel="noreferrer">here</a>.</p>
+            You can view the rest of my github <a href="https://github.com/vampirika" target="_blank" rel="noreferrer">here</a>.</p>
 
             <p>Please feel free to explore the other pages although please note some items may still be WIP. Thank you for visiting.</p>
             <CommitTime />
