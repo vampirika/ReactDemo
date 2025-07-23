@@ -16,7 +16,7 @@ const QuestionDisplay = ({ num1, num2 }: { num1: number; num2: number }) => {
   return (
     <div className="question-container">
         <div className="question-container-part">
-            {renderImages(num1, "/images/noa.jpg", "Heart")}
+            {renderImages(num1, "/images/heart.jpg", "Heart")}
         </div>
         <div className="question-container-operator">
             <span className="question-addition-sign">+</span>

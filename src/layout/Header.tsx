@@ -41,6 +41,7 @@ const Header = () => {
 
           <ul className={`nav-links ${isRevealed ? 'active' : ''}`}>
             <li><Link to="/" onClick={handleReveal}>Homepage</Link></li>
+            <li><Link to="/poker" onClick={handleReveal}>Poker</Link></li>
             <li><Link to="/buttons" onClick={handleReveal}>Buttons</Link></li>
             <li><Link to="/images" onClick={handleReveal}>Images</Link></li>
             <li><Link to="/crud" onClick={handleReveal}>CRUD</Link></li>

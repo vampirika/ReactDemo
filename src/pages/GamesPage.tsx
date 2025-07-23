@@ -40,9 +40,9 @@ const renderBlerbContent = () => {
         case 'Snake':
             return <div>Use arrow keys to move the green snake and eat the red pieces of food. Do not crash into the wall or your own snake body!</div>;
         case 'Numbers':
-            return <div>Numbers game for Noa</div>;
+            return <div>Numbers game</div>;
         case 'Words':
-            return <div>Word game for Noa</div>;
+            return <div>Word game</div>;
         case 'Other':
             return <div>Other game instructions</div>;
         default:
