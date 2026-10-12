@@ -1,7 +1,7 @@
 import React from 'react';
 import './buttonsPage.css';
-import HoldButton from '../components/HoldButton.tsx';
-import HoldButtonProgress from '../components/HoldButtonProgress.tsx';
+import HoldButton from '../components/HoldButton';
+import HoldButtonProgress from '../components/HoldButtonProgress';
 
 
 const ButtonsPage = () => {
