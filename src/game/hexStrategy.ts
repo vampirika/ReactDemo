@@ -1,5 +1,6 @@
 export type PlayerColor = 'blue' | 'red';
 export type TileOwner = PlayerColor | 'neutral';
+export type UnitType = 'peasant' | 'knight';
 
 export type HexCoord = {
   q: number;
@@ -9,7 +10,9 @@ export type HexCoord = {
 export type Peasant = {
   id: string;
   player: PlayerColor;
+  unitType: UnitType;
   position: HexCoord;
+  movementLeft: number;
   moved: boolean;
 };
 
@@ -29,6 +32,8 @@ export type GameState = {
 
 export const BOARD_RADIUS = 5;
 export const MAX_ROUNDS = 10;
+export const MAX_PEASANT_MOVEMENT = 2;
+export const MAX_KNIGHT_MOVEMENT = 3;
 
 export const coordKey = ({ q, r }: HexCoord) => `${q},${r}`;
 
@@ -114,12 +119,14 @@ export const createInitialGameState = (): GameState => {
 
   const peasants: Record<PlayerColor, Peasant[]> = {
     blue: [
-      { id: 'blue-1', player: 'blue', position: { q: -4, r: 0 }, moved: false },
-      { id: 'blue-2', player: 'blue', position: { q: -3, r: 1 }, moved: false },
+      { id: 'blue-peasant-1', player: 'blue', unitType: 'peasant', position: { q: -4, r: 0 }, movementLeft: MAX_PEASANT_MOVEMENT, moved: false },
+      { id: 'blue-peasant-2', player: 'blue', unitType: 'peasant', position: { q: -3, r: 1 }, movementLeft: MAX_PEASANT_MOVEMENT, moved: false },
+      { id: 'blue-knight-1', player: 'blue', unitType: 'knight', position: { q: -2, r: 2 }, movementLeft: MAX_KNIGHT_MOVEMENT, moved: false },
     ],
     red: [
-      { id: 'red-1', player: 'red', position: { q: 4, r: 0 }, moved: false },
-      { id: 'red-2', player: 'red', position: { q: 3, r: -1 }, moved: false },
+      { id: 'red-peasant-1', player: 'red', unitType: 'peasant', position: { q: 4, r: 0 }, movementLeft: MAX_PEASANT_MOVEMENT, moved: false },
+      { id: 'red-peasant-2', player: 'red', unitType: 'peasant', position: { q: 3, r: -1 }, movementLeft: MAX_PEASANT_MOVEMENT, moved: false },
+      { id: 'red-knight-1', player: 'red', unitType: 'knight', position: { q: 2, r: -2 }, movementLeft: MAX_KNIGHT_MOVEMENT, moved: false },
     ],
   };
 
@@ -162,13 +169,15 @@ export const countTerritory = (state: GameState) => {
   return counts;
 };
 
-export const getMovementPath = (from: HexCoord, to: HexCoord, maxDistance = 2): HexCoord[] | null => {
+export const getMovementPaths = (from: HexCoord, to: HexCoord, maxDistance = MAX_PEASANT_MOVEMENT): HexCoord[][] => {
   if (areSameHex(from, to)) {
-    return [from];
+    return [[from]];
   }
 
   const queue: Array<{ hex: HexCoord; path: HexCoord[] }> = [{ hex: from, path: [from] }];
-  const visited = new Set<string>([coordKey(from)]);
+  const bestDistances = new Map<string, number>([[coordKey(from), 0]]);
+  const pathsByHex = new Map<string, HexCoord[][]>([[coordKey(from), [[from]]]]);
+  const pathKey = (path: HexCoord[]) => path.map((hex) => coordKey(hex)).join('|');
 
   while (queue.length > 0) {
     const current = queue.shift();
@@ -177,37 +186,83 @@ export const getMovementPath = (from: HexCoord, to: HexCoord, maxDistance = 2): 
       continue;
     }
 
-    const neighbors = getNeighbors(current.hex);
+    const currentDistance = current.path.length - 1;
+    if (currentDistance >= maxDistance) {
+      continue;
+    }
 
-    for (const neighbor of neighbors) {
+    for (const neighbor of getNeighbors(current.hex)) {
+      const nextPath = [...current.path, neighbor];
+      const nextDistance = nextPath.length - 1;
       const neighborKey = coordKey(neighbor);
+      const bestKnown = bestDistances.get(neighborKey);
 
-      if (visited.has(neighborKey)) {
+      if (nextDistance > maxDistance) {
         continue;
       }
 
-      const nextPath = [...current.path, neighbor];
-      if (areSameHex(neighbor, to)) {
-        return nextPath;
+      if (bestKnown === undefined || nextDistance < bestKnown) {
+        bestDistances.set(neighborKey, nextDistance);
+        pathsByHex.set(neighborKey, [nextPath]);
+        queue.push({ hex: neighbor, path: nextPath });
+        continue;
       }
 
-      if (current.path.length <= maxDistance) {
-        visited.add(neighborKey);
+      if (nextDistance === bestKnown) {
+        const existingPaths = pathsByHex.get(neighborKey) ?? [];
+        const merged = new Map(existingPaths.map((path) => [pathKey(path), path]));
+        merged.set(pathKey(nextPath), nextPath);
+        pathsByHex.set(neighborKey, Array.from(merged.values()));
         queue.push({ hex: neighbor, path: nextPath });
       }
     }
   }
 
-  return null;
+  return pathsByHex.get(coordKey(to)) ?? [];
+};
+
+export const getMovementPath = (from: HexCoord, to: HexCoord, maxDistance = MAX_PEASANT_MOVEMENT): HexCoord[] | null => {
+  const paths = getMovementPaths(from, to, maxDistance);
+  return paths[0] ?? null;
+};
+
+export const isStraightLinePath = (path: HexCoord[]) => {
+  if (path.length < 2) {
+    return false;
+  }
+
+  const direction = {
+    q: path[1].q - path[0].q,
+    r: path[1].r - path[0].r,
+  };
+
+  return path.slice(1).every((hex, index) => {
+    if (index === 0) {
+      return true;
+    }
+
+    const previous = path[index];
+    return hex.q - previous.q === direction.q && hex.r - previous.r === direction.r;
+  });
 };
 
 export const getReachableTiles = (state: GameState, player: PlayerColor, peasantId?: string): HexCoord[] => {
   const activePeasant = peasantId
     ? state.peasants[player].find((peasant) => peasant.id === peasantId)
-    : state.peasants[player].find((peasant) => !peasant.moved) ?? state.peasants[player][0];
+    : state.peasants[player].find((peasant) => peasant.movementLeft > 0) ?? state.peasants[player][0];
 
   if (!activePeasant) {
     return [];
+  }
+
+  if (activePeasant.unitType === 'knight') {
+    return getBoardHexes().filter((hex) => {
+      if (areSameHex(hex, activePeasant.position)) {
+        return false;
+      }
+
+      return canUnitMoveTo(state, activePeasant.id, hex);
+    });
   }
 
   const origin = activePeasant.position;
@@ -222,7 +277,7 @@ export const getReachableTiles = (state: GameState, player: PlayerColor, peasant
       continue;
     }
 
-    if (current.path.length >= 3) {
+    if (current.path.length >= activePeasant.movementLeft + 1) {
       continue;
     }
 
@@ -249,14 +304,13 @@ export const getReachableTiles = (state: GameState, player: PlayerColor, peasant
   return Array.from(reachable.values());
 };
 
-export const canPeasantMoveTo = (state: GameState, peasantId: string, destination: HexCoord) => {
+export const canUnitMoveTo = (state: GameState, peasantId: string, destination: HexCoord) => {
   const activePeasant = getPeasantById(state, peasantId);
-  if (!activePeasant || activePeasant.player !== state.currentPlayer || activePeasant.moved) {
+  if (!activePeasant || activePeasant.player !== state.currentPlayer || activePeasant.movementLeft <= 0) {
     return false;
   }
 
-  const path = getMovementPath(activePeasant.position, destination, 2);
-  if (!path || path.length > 3) {
+  if (areSameHex(activePeasant.position, destination)) {
     return false;
   }
 
@@ -265,13 +319,22 @@ export const canPeasantMoveTo = (state: GameState, peasantId: string, destinatio
     return false;
   }
 
-  for (const step of path.slice(1)) {
-    if (getPeasantAtHex(state, step, peasantId)) {
-      return false;
-    }
+  const path = getMovementPath(activePeasant.position, destination, activePeasant.movementLeft);
+  if (!path) {
+    return false;
   }
 
-  return true;
+  if (activePeasant.unitType === 'knight') {
+    const straightLine = path.length === 4 && isStraightLinePath(path);
+    const pathIsValid = straightLine && path.slice(1, -1).every((hex) => !getPeasantAtHex(state, hex, peasantId));
+    return pathIsValid;
+  }
+
+  const pathDistance = path.length - 1;
+  const pathIsValid = pathDistance <= activePeasant.movementLeft
+    && path.slice(1, -1).every((hex) => !getPeasantAtHex(state, hex, peasantId));
+
+  return pathIsValid;
 };
 
 export const determineWinner = (state: GameState) => {
@@ -291,22 +354,24 @@ export const determineWinner = (state: GameState) => {
   };
 };
 
-export const applyMove = (state: GameState, peasantId: string, destination: HexCoord): GameState => {
+export const applyMove = (state: GameState, peasantId: string, destination: HexCoord, plannedPath?: HexCoord[]): GameState => {
   if (state.status === 'finished') {
     return state;
   }
 
   const activePeasant = getPeasantById(state, peasantId);
-  if (!activePeasant || activePeasant.player !== state.currentPlayer || activePeasant.moved) {
+  if (!activePeasant || activePeasant.player !== state.currentPlayer || activePeasant.movementLeft <= 0) {
     return state;
   }
 
-  if (!canPeasantMoveTo(state, peasantId, destination)) {
+  if (!canUnitMoveTo(state, peasantId, destination)) {
     return state;
   }
 
-  const path = getMovementPath(activePeasant.position, destination, 2);
-  if (!path || path.length > 3) {
+  const path = plannedPath && plannedPath.length > 1
+    ? plannedPath
+    : getMovementPath(activePeasant.position, destination, activePeasant.movementLeft);
+  if (!path || path.length < 2 || !areSameHex(path[0], activePeasant.position) || !areSameHex(path[path.length - 1], destination)) {
     return state;
   }
 
@@ -332,8 +397,10 @@ export const applyMove = (state: GameState, peasantId: string, destination: HexC
     nextState.tiles[coordKey(hex)] = player;
   });
 
+  const distanceTraveled = path.length - 1;
   updatedPeasant.position = destination;
-  updatedPeasant.moved = true;
+  updatedPeasant.movementLeft = Math.max(0, updatedPeasant.movementLeft - distanceTraveled);
+  updatedPeasant.moved = updatedPeasant.movementLeft === 0;
 
   return nextState;
 };
@@ -349,8 +416,16 @@ export const endTurn = (state: GameState): GameState => {
   const nextState: GameState = {
     ...state,
     peasants: {
-      blue: state.peasants.blue.map((peasant) => ({ ...peasant, moved: false })),
-      red: state.peasants.red.map((peasant) => ({ ...peasant, moved: false })),
+      blue: state.peasants.blue.map((peasant) => ({
+        ...peasant,
+        movementLeft: peasant.unitType === 'knight' ? MAX_KNIGHT_MOVEMENT : MAX_PEASANT_MOVEMENT,
+        moved: false,
+      })),
+      red: state.peasants.red.map((peasant) => ({
+        ...peasant,
+        movementLeft: peasant.unitType === 'knight' ? MAX_KNIGHT_MOVEMENT : MAX_PEASANT_MOVEMENT,
+        moved: false,
+      })),
     },
     currentPlayer: nextPlayer,
     totalTurns: state.totalTurns + 1,

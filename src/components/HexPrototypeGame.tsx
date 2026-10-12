@@ -7,7 +7,11 @@ import {
   endTurn,
   getBoardHexes,
   getMovementPath,
+  getMovementPaths,
+  getPeasantAtHex,
   getReachableTiles,
+  MAX_KNIGHT_MOVEMENT,
+  MAX_PEASANT_MOVEMENT,
   MAX_ROUNDS,
   type GameState,
   type HexCoord,
@@ -18,9 +22,9 @@ const HEX_SIZE = 32;
 const BOARD_CENTER_X = 440;
 const BOARD_CENTER_Y = 330;
 
-const playerTheme: Record<PlayerColor, { base: string; soft: string; label: string }> = {
-  blue: { base: '#4d7ae6', soft: '#dfeaff', label: 'Blue' },
-  red: { base: '#e66d6d', soft: '#f9dfe1', label: 'Red' },
+const playerTheme: Record<PlayerColor, { base: string; soft: string; dark: string; label: string }> = {
+  blue: { base: '#4d7ae6', soft: '#dfeaff', dark: '#1b3c8d', label: 'Blue' },
+  red: { base: '#e66d6d', soft: '#f9dfe1', dark: '#7d1e2d', label: 'Red' },
 };
 
 const neutralTile = '#e7d8c5';
@@ -45,6 +49,76 @@ const hexPoints = (cx: number, cy: number) => {
   return points.join(' ');
 };
 
+const choosePreferredRoute = (
+  from: HexCoord,
+  destination: HexCoord,
+  maxDistance: number,
+  hoverPoint: { x: number; y: number } | null,
+  state: GameState,
+  unitId: string,
+): HexCoord[] => {
+  const candidatePaths = getMovementPaths(from, destination, maxDistance).filter((path) => {
+    if (path.length < 2) {
+      return false;
+    }
+
+    return path.slice(1, -1).every((hex) => !getPeasantAtHex(state, hex, unitId));
+  });
+
+  if (candidatePaths.length <= 1) {
+    return candidatePaths[0] ?? [];
+  }
+
+  if (!hoverPoint) {
+    return candidatePaths[0];
+  }
+
+  const destinationCenter = axialToPixel(destination.q, destination.r);
+  const pointerVector = {
+    x: hoverPoint.x - destinationCenter.x,
+    y: hoverPoint.y - destinationCenter.y,
+  };
+  const pointerMagnitude = Math.hypot(pointerVector.x, pointerVector.y) || 1;
+
+  const bestPath = candidatePaths.reduce((best, path) => {
+    const previousHex = path[path.length - 2];
+    const previousPixel = axialToPixel(previousHex.q, previousHex.r);
+    const incomingVector = {
+      x: previousPixel.x - destinationCenter.x,
+      y: previousPixel.y - destinationCenter.y,
+    };
+
+    const cross = pointerVector.x * incomingVector.y - pointerVector.y * incomingVector.x;
+    const dot = pointerVector.x * incomingVector.x + pointerVector.y * incomingVector.y;
+    const angularDelta = Math.abs(Math.atan2(cross, dot));
+    const directionalScore = 1 - (angularDelta / Math.PI);
+    const distancePenalty = Math.hypot(
+      pointerVector.x - incomingVector.x,
+      pointerVector.y - incomingVector.y,
+    ) / (HEX_SIZE * 2);
+    const sideBias = directionalScore - distancePenalty * 0.15;
+
+    if (!best || sideBias > best.score) {
+      return { path, score: sideBias };
+    }
+
+    return best;
+  }, null as { path: HexCoord[]; score: number } | null);
+
+  return bestPath ? bestPath.path : candidatePaths[0];
+};
+
+const buildRoutePath = (route: HexCoord[]) => {
+  if (route.length === 0) {
+    return '';
+  }
+
+  return route.map((hex, index) => {
+    const pixel = axialToPixel(hex.q, hex.r);
+    return `${index === 0 ? 'M' : 'L'} ${pixel.x} ${pixel.y}`;
+  }).join(' ');
+};
+
 const getTileFill = (owner: GameState['tiles'][string] | undefined) => {
   if (owner === 'blue') {
     return playerTheme.blue.soft;
@@ -59,8 +133,9 @@ const getTileFill = (owner: GameState['tiles'][string] | undefined) => {
 
 const HexPrototypeGame = () => {
   const [gameState, setGameState] = useState<GameState>(() => createInitialGameState());
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>('blue-1');
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>('blue-peasant-1');
   const [hoveredHex, setHoveredHex] = useState<HexCoord | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(null);
 
   const boardHexes = useMemo(() => getBoardHexes(), []);
   const currentPlayer = gameState.currentPlayer;
@@ -68,6 +143,7 @@ const HexPrototypeGame = () => {
     () => gameState.peasants[currentPlayer].find((peasant) => peasant.id === selectedUnitId) ?? null,
     [currentPlayer, gameState.peasants, selectedUnitId],
   );
+  const routeColor = selectedUnit ? playerTheme[selectedUnit.player].dark : '#614b3a';
 
   const reachableTiles = useMemo(() => {
     if (!selectedUnit) {
@@ -80,19 +156,27 @@ const HexPrototypeGame = () => {
   const reachableSet = useMemo(() => new Set(reachableTiles.map((hex) => coordKey(hex))), [reachableTiles]);
 
   const previewPath = useMemo(() => {
-    if (!selectedUnit || !hoveredHex) {
+    if (!selectedUnit || selectedUnit.movementLeft <= 0 || !hoveredHex) {
       return [] as HexCoord[];
     }
 
-    const path = getMovementPath(selectedUnit.position, hoveredHex, 2);
-    if (!path) {
+    const occupiedTarget = getPeasantAtHex(gameState, hoveredHex, selectedUnit.id);
+    if (occupiedTarget && !areSameHex(occupiedTarget.position, selectedUnit.position)) {
       return [] as HexCoord[];
     }
 
-    return path;
-  }, [hoveredHex, selectedUnit]);
+    return choosePreferredRoute(
+      selectedUnit.position,
+      hoveredHex,
+      selectedUnit.movementLeft,
+      hoverPoint,
+      gameState,
+      selectedUnit.id,
+    );
+  }, [gameState, hoveredHex, hoverPoint, selectedUnit]);
 
   const previewPathSet = useMemo(() => new Set(previewPath.map((hex) => coordKey(hex))), [previewPath]);
+  const routePath = useMemo(() => buildRoutePath(previewPath), [previewPath]);
 
   const territoryScores = useMemo(() => {
     const scores = { blue: 0, red: 0 };
@@ -107,7 +191,7 @@ const HexPrototypeGame = () => {
     return scores;
   }, [gameState.tiles]);
 
-  const allAvailableUnits = gameState.peasants[currentPlayer].filter((peasant) => !peasant.moved);
+  const allAvailableUnits = gameState.peasants[currentPlayer].filter((peasant) => peasant.movementLeft > 0);
 
   const handleHexClick = (destination: HexCoord) => {
     if (gameState.status === 'finished') {
@@ -116,37 +200,54 @@ const HexPrototypeGame = () => {
 
     const clickedPeasantOnHex = Object.values(gameState.peasants)
       .flat()
-      .find((peasant) => areSameHex(peasant.position, destination) && peasant.player === currentPlayer && !peasant.moved);
+      .find((peasant) => areSameHex(peasant.position, destination) && peasant.player === currentPlayer);
 
     if (clickedPeasantOnHex) {
-      setSelectedUnitId(clickedPeasantOnHex.id);
-      setHoveredHex(null);
+      if (clickedPeasantOnHex.movementLeft > 0) {
+        setSelectedUnitId(clickedPeasantOnHex.id);
+        setHoveredHex(null);
+        setHoverPoint(null);
+      }
       return;
     }
 
-    if (!selectedUnit || selectedUnit.moved) {
+    if (!selectedUnit || selectedUnit.movementLeft <= 0) {
       const nextSelection = allAvailableUnits[0] ?? null;
       setSelectedUnitId(nextSelection ? nextSelection.id : null);
+      setHoverPoint(null);
       return;
     }
 
-    const nextState = applyMove(gameState, selectedUnit.id, destination);
+    const chosenPath = choosePreferredRoute(
+      selectedUnit.position,
+      destination,
+      selectedUnit.movementLeft,
+      hoverPoint,
+      gameState,
+      selectedUnit.id,
+    );
+    const nextState = applyMove(gameState, selectedUnit.id, destination, chosenPath);
     if (nextState === gameState) {
       return;
     }
 
-    const nextAvailable = nextState.peasants[currentPlayer].find((peasant) => !peasant.moved) ?? null;
+    const nextSelected = nextState.peasants[currentPlayer].find((peasant) => peasant.id === selectedUnit.id)
+      ?? nextState.peasants[currentPlayer].find((peasant) => peasant.movementLeft > 0)
+      ?? null;
+
     setGameState(nextState);
-    setSelectedUnitId(nextAvailable ? nextAvailable.id : null);
+    setSelectedUnitId(nextSelected ? nextSelected.id : null);
     setHoveredHex(null);
+    setHoverPoint(null);
   };
 
   const handleEndTurn = () => {
     const nextState = endTurn(gameState);
     setGameState(nextState);
-    const nextSelection = nextState.peasants[nextState.currentPlayer].find((peasant) => !peasant.moved) ?? null;
+    const nextSelection = nextState.peasants[nextState.currentPlayer].find((peasant) => peasant.movementLeft > 0) ?? null;
     setSelectedUnitId(nextSelection ? nextSelection.id : null);
     setHoveredHex(null);
+    setHoverPoint(null);
   };
 
   const handleRestart = () => {
@@ -154,6 +255,7 @@ const HexPrototypeGame = () => {
     setGameState(freshGame);
     setSelectedUnitId(freshGame.peasants.blue[0].id);
     setHoveredHex(null);
+    setHoverPoint(null);
   };
 
   const previewPoints = previewPath.length > 1
@@ -208,25 +310,6 @@ const HexPrototypeGame = () => {
       </div>
 
       <svg className="hex-board" viewBox="0 0 900 700" role="img" aria-label="Hex strategy board">
-        <defs>
-          <marker id="route-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#614b3a" />
-          </marker>
-        </defs>
-
-        {previewPoints && (
-          <polyline
-            points={previewPoints}
-            fill="none"
-            stroke="#614b3a"
-            strokeWidth="4"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            markerEnd="url(#route-arrow)"
-            opacity="0.9"
-          />
-        )}
-
         {boardHexes.map((hex) => {
           const center = axialToPixel(hex.q, hex.r);
           const key = coordKey(hex);
@@ -235,7 +318,7 @@ const HexPrototypeGame = () => {
           const isPreview = selectedUnit ? previewPathSet.has(key) : false;
           const isSelectedHex = selectedUnit ? areSameHex(hex, selectedUnit.position) : false;
           const isCastle = areSameHex(hex, gameState.castles.blue) || areSameHex(hex, gameState.castles.red);
-          const peasantOnHex = Object.values(gameState.peasants)
+          const unitOnHex = Object.values(gameState.peasants)
             .flat()
             .find((peasant) => areSameHex(peasant.position, hex));
 
@@ -247,12 +330,33 @@ const HexPrototypeGame = () => {
             <g
               key={key}
               className="hex-node"
-              onMouseEnter={() => {
-                if (selectedUnit && isReachable) {
+              onMouseEnter={(event) => {
+                if (selectedUnit && selectedUnit.movementLeft > 0 && isReachable) {
                   setHoveredHex(hex);
+                  const svgBounds = event.currentTarget.ownerSVGElement?.getBoundingClientRect();
+                  if (svgBounds) {
+                    setHoverPoint({
+                      x: event.clientX - svgBounds.left,
+                      y: event.clientY - svgBounds.top,
+                    });
+                  }
                 }
               }}
-              onMouseLeave={() => setHoveredHex(null)}
+              onMouseMove={(event) => {
+                if (selectedUnit && selectedUnit.movementLeft > 0 && isReachable) {
+                  const svgBounds = event.currentTarget.ownerSVGElement?.getBoundingClientRect();
+                  if (svgBounds) {
+                    setHoverPoint({
+                      x: event.clientX - svgBounds.left,
+                      y: event.clientY - svgBounds.top,
+                    });
+                  }
+                }
+              }}
+              onMouseLeave={() => {
+                setHoveredHex(null);
+                setHoverPoint(null);
+              }}
               onClick={() => handleHexClick(hex)}
             >
               <polygon
@@ -280,31 +384,83 @@ const HexPrototypeGame = () => {
                 );
               })()}
 
-              {peasantOnHex && (
-                <g
-                  transform={`translate(${center.x} ${center.y})`}
-                  style={{ transition: 'transform 180ms ease-in-out' }}
-                >
-                  <circle
-                    r={13}
-                    fill={playerTheme[peasantOnHex.player].base}
-                    stroke={selectedUnit?.id === peasantOnHex.id ? '#f6f2ed' : '#f5efe8'}
-                    strokeWidth={selectedUnit?.id === peasantOnHex.id ? 4 : 3}
-                    opacity={peasantOnHex.moved ? 0.7 : 1}
-                  />
+              {unitOnHex && (
+                <g transform={`translate(${center.x} ${center.y})`}>
+                  {unitOnHex.unitType === 'knight' ? (
+                    <polygon
+                      points="0,-15 15,14 -15,14"
+                      fill={playerTheme[unitOnHex.player].base}
+                      stroke={selectedUnit?.id === unitOnHex.id ? '#f6f2ed' : '#f5efe8'}
+                      strokeWidth={selectedUnit?.id === unitOnHex.id ? 4 : 3}
+                      opacity={unitOnHex.movementLeft === 0 ? 0.7 : 1}
+                    />
+                  ) : (
+                    <circle
+                      r={13}
+                      fill={playerTheme[unitOnHex.player].base}
+                      stroke={selectedUnit?.id === unitOnHex.id ? '#f6f2ed' : '#f5efe8'}
+                      strokeWidth={selectedUnit?.id === unitOnHex.id ? 4 : 3}
+                      opacity={unitOnHex.movementLeft === 0 ? 0.7 : 1}
+                    />
+                  )}
 
-                  {selectedUnit?.id === peasantOnHex.id && (
-                    <circle r={20} fill="none" stroke="#d7d1c4" strokeWidth={2.5} strokeDasharray="4 6" />
+                  <text
+                    x={0}
+                    y={4}
+                    textAnchor="middle"
+                    fontSize="9"
+                    fontWeight="700"
+                    fill="#ffffff"
+                  >
+                    {`${unitOnHex.movementLeft}/${unitOnHex.unitType === 'knight' ? MAX_KNIGHT_MOVEMENT : MAX_PEASANT_MOVEMENT}`}
+                  </text>
+
+                  {selectedUnit?.id === unitOnHex.id && (
+                    <circle r={19} fill="none" stroke="#d7d1c4" strokeWidth={2.5} strokeDasharray="4 6" />
                   )}
 
                   {isSelectedHex && (
-                    <circle r={23} fill="none" stroke="#5f7b4f" strokeWidth={2.5} />
+                    <circle r={21} fill="none" stroke="#5f7b4f" strokeWidth={2.5} />
                   )}
                 </g>
               )}
             </g>
           );
         })}
+
+        {previewPath.length > 1 && (
+          <g style={{ pointerEvents: 'none' }}>
+            <polyline
+              points={previewPoints}
+              fill="none"
+              stroke={routeColor}
+              strokeWidth="12"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              opacity="0.26"
+            >
+              <animate attributeName="stroke-dasharray" values="0 24; 12 12; 0 24" dur="1.4s" repeatCount="indefinite" />
+            </polyline>
+            <polyline
+              points={previewPoints}
+              fill="none"
+              stroke={routeColor}
+              strokeWidth="5"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              opacity="0.96"
+              strokeDasharray="10 14"
+            >
+              <animate attributeName="stroke-dashoffset" values="0;-30" dur="1.1s" repeatCount="indefinite" />
+            </polyline>
+            <circle r={6} fill="#f5e5a6" opacity="0.96">
+              <animateMotion dur="1.1s" repeatCount="indefinite" path={routePath} />
+            </circle>
+            <circle r={10} fill={routeColor} opacity="0.22">
+              <animateMotion dur="1.1s" repeatCount="indefinite" path={routePath} />
+            </circle>
+          </g>
+        )}
       </svg>
     </div>
   );

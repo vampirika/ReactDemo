@@ -2,57 +2,67 @@
 
 ## Project shape
 
-This is a React portfolio/demo site built with Create React App. It is not a large app framework or a backend project; it is a route-based single-page experience with demo pages and interactive mini-games.
+This is a React demo/portfolio app built with Create React App. The app is route-driven and is intentionally organized as a set of smaller experiences rather than a large feature-based application.
 
 - App entry: `src/index.js`
-- Router and route definitions: `src/router.jsx`
-- App shell/layout: `src/App.js`, `src/layout/Header.tsx`, `src/layout/Footer.tsx`
-- Page components: `src/pages/*`
-- Reusable UI/game logic: `src/components/*`
+- Router: `src/router.jsx` (includes `/`, `/buttons`, `/images`, `/crud`, `/games`, `/todo`, `/cardsandscrolls`)
+- Shared app shell: `src/App.js`, `src/layout/Header.tsx`, `src/layout/Footer.tsx`
+- Page-level screens: `src/pages/*`
+- Reusable UI and game components: `src/components/*`
+- Game rules/state layer: `src/game/*` (for example `hexStrategy.ts` and its tests)
 - Static assets: `public/`
 - Firebase client setup: `src/firebase.js`
-- Azure deployment pipeline: `.github/workflows/azure-static-web-apps-*.yml`
+- Azure deployment config: `.github/workflows/azure-static-web-apps-*.yml`
 
-The app pattern is: page-level feature demos are mounted by route; each page often imports its own CSS file, and navigation is managed from the `Header` component. If you add a new page, update both the router and the header navigation so the route is discoverable.
+The app pattern is: page-level experience -> route -> component. If you add or rename a page, update the router and usually the header navigation so the route remains discoverable.
 
 ## Build, test, and validation commands
 
 Use the scripts defined in `package.json`:
 
 - Install dependencies: `npm install`
-- Run dev server: `npm start`
+- Start the app locally: `npm start`
 - Production build: `npm run build`
-- Run the test suite: `npm test -- --watch=false`
-- Run a single test file: `CI=true npm test -- --watch=false --runTestsByPath src/App.test.js`
-- Run a single matching test name: `CI=true npm test -- --watch=false --runInBand --testNamePattern="renders header"`
+- Run the full test suite: `npm test -- --watch=false`
+- Run a single test file: `CI=true npm test -- --watch=false --runTestsByPath src/game/hexStrategy.test.ts`
+- Run a single matching test name: `CI=true npm test -- --watch=false --runInBand --testNamePattern="creates a valid blue peasant move"`
+- Run a local browser check to inspect the page visually: `npm start` and open `http://localhost:3000`
 
-There is no dedicated `npm run lint` script in this repo. The project relies on CRA's default React ESLint setup from `react-scripts` and the `eslintConfig` in `package.json`.
+There is no dedicated `npm run lint` script in this repo. The project relies on CRA's default React ESLint setup via `react-scripts` and `eslintConfig` in `package.json`.
 
-The build script also runs a post-build step: `cp web.config build/`, which is important because the site is deployed through Azure Static Web Apps and the `web.config` file is copied into the production output.
+The build script also copies `web.config` into `build/` via the `postbuild` script. Keep that behavior intact for the Azure Static Web Apps deployment flow.
 
 ## High-level architecture
 
-This repository is organized around a lightweight SPA shell:
+This repository is organized around a lightweight SPA shell, but it also includes a growing strategy-game prototype that has been separated from the UI layer:
 
-- `src/index.js` mounts the app with `RouterProvider` from `react-router-dom`.
-- `src/router.jsx` defines the route tree (`/`, `/buttons`, `/images`, `/crud`, `/todo`, `/cardsandscrolls`).
-- `src/App.js` renders the shared `Header`, an `Outlet` for the current page, and the `Footer`.
-- `src/pages/` contains page-level demos such as games, CRUD examples, image experiments, and a todo list.
-- `src/components/` contains reusable, self-contained UI components and game engines used by those pages.
-- Most styling is imported directly into the component or page file, using CSS in the same folder (for example `homepage.css`, `gamesPage.css`, `header.css`).
+- `src/index.js` mounts the app and provides the router.
+- `src/router.jsx` defines the route tree and lazy-loads the games page.
+- `src/App.js` provides the shared layout and renders the content area.
+- `src/pages/` contains the UI for each route. The games page is hosted here and loads the interactive prototype.
+- `src/components/HexPrototypeGame.tsx` is the rendering and interaction layer for the hex-board prototype.
+- `src/game/hexStrategy.ts` holds the game rules, board geometry, turn flow, unit movement rules, territory counting, and win/tie logic. This is the layer to update first when changing gameplay rules.
+- `src/game/hexStrategy.test.ts` verifies the rules without relying on the browser UI.
+- Most styling is co-located with the page/component it affects (for example `src/pages/gamesPage.css` and nearby component CSS files).
 
-This is intentionally a demo/portfolio app rather than a feature-based app architecture. Keep changes small and local to the relevant page/component unless a bug clearly spans the layout or router.
+This is a demo app, not a backend-heavy project. Prefer small, local changes; keep game logic separate from rendering where possible; and avoid introducing global app state unless a feature truly requires it.
 
 ## Conventions specific to this codebase
 
-- The app uses a mixed JS/TSX setup: some files are `.js`/`.jsx` while several components/pages are `.tsx`. Do not assume the repository is fully TypeScript-only; the project is still CRA-based and JavaScript-first.
-- New route pages should be added in `src/router.jsx` and generally also surfaced in the header via `src/layout/Header.tsx`.
-- CSS is colocated with the component/page it styles instead of using a central CSS architecture. Follow that pattern for new UI work.
-- Keep feature demos self-contained. Many pages are stand-alone experiments; avoid introducing a global state/store pattern unless the change genuinely requires cross-page state.
-- The app has a public-facing Azure deployment flow; do not change deployment-related config or secrets without checking the workflow and repo policy.
+- The repo is a mixed JS/TSX codebase: some files are `.js`/`.jsx` while others are `.ts`/`.tsx`. Do not assume it is fully TypeScript-only.
+- Route pages should usually be declared in `src/router.jsx` and surfaced in the header navigation via `src/layout/Header.tsx`.
+- CSS is colocated with the component/page it styles instead of a single app-wide stylesheet; follow that pattern for new UI work.
+- Keep feature demos self-contained. Most pages are independent experiments, so avoid a large shared state store unless the change genuinely requires it.
+- Game logic belongs in `src/game/*` and should be testable independently from React rendering. Keep rules and UI concerns separate.
+- The app is deployed through Azure Static Web Apps; do not change deployment or secret configuration without checking the workflow and repo policy.
 
-## Testing and change safety notes
+## Relevant repo notes
 
-- Existing tests use the router config directly (`src/App.test.js` mounts a memory router created from `routes` from `src/router.jsx`). If you update route names or paths, keep tests aligned.
-- The repo is small and route-driven; prefer targeted, page-level validation when making UI changes instead of broad refactors.
-- Because this project is a demo site, component behavior is often visual/interactive rather than API-driven. When adding new behavior, validate the relevant route in the browser and keep the change scoped to the affected page or component.
+- Existing tests mount the router from `src/router.jsx` (`src/App.test.js`), so route renames and additions should keep those tests in sync.
+- The Games page is lazy-loaded, so a new route often needs both route registration and deep UI content.
+- Because this is a website/demo codebase, validation is usually most effective with targeted route checks and focused rule tests rather than large architectural refactors.
+
+## AI assistant config already present
+
+- `CLAUDE.md` exists and should be treated as an additional repo-specific prompt for AI guidance.
+- Prefer small, repo-aware improvements instead of replacing the existing project-specific guidance wholesale.
