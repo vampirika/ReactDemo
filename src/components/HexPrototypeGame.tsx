@@ -1,260 +1,238 @@
-import { useEffect, useRef } from 'react';
-import Phaser from 'phaser';
+import React, { useMemo, useState } from 'react';
+import {
+  applyMove,
+  areSameHex,
+  coordKey,
+  createInitialGameState,
+  getBoardHexes,
+  getMovementPath,
+  getReachableTiles,
+  MAX_ROUNDS,
+  type GameState,
+  type HexCoord,
+  type PlayerColor,
+} from '../game/hexStrategy.ts';
 
-type HexCoord = {
-  q: number;
-  r: number;
+const HEX_SIZE = 30;
+const BOARD_CENTER_X = 440;
+const BOARD_CENTER_Y = 330;
+
+const playerTheme: Record<PlayerColor, { base: string; soft: string; light: string; label: string }> = {
+  blue: { base: '#4d7ae6', soft: '#dfeaff', light: '#eef5ff', label: 'Blue' },
+  red: { base: '#e66d6d', soft: '#f9dfe1', light: '#fff0f0', label: 'Red' },
 };
 
-type Unit = HexCoord & {
-  id: number;
-  name: string;
-  color: number;
-  moveRange: number;
-};
-
-const BOARD_RADIUS = 4;
-const HEX_RADIUS = 28;
-const BOARD_ORIGIN_X = 430;
-const BOARD_ORIGIN_Y = 250;
-
-const axialDistance = (a: HexCoord, b: HexCoord) => {
-  const dq = a.q - b.q;
-  const dr = a.r - b.r;
-  const ds = -dq - dr;
-
-  return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds));
-};
+const neutralTile = '#e2d5c2';
+const neutralDark = '#bca887';
+const reachableFill = '#bfe6a8';
+const rangeStroke = '#5f7b4f';
 
 const axialToPixel = (q: number, r: number) => ({
-  x: HEX_RADIUS * Math.sqrt(3) * (q + r / 2),
-  y: HEX_RADIUS * 1.5 * r,
+  x: HEX_SIZE * Math.sqrt(3) * (q + r / 2) + BOARD_CENTER_X,
+  y: HEX_SIZE * 1.5 * r + BOARD_CENTER_Y,
 });
 
-const getHexVertices = (centerX: number, centerY: number) => {
-  const points: Phaser.Math.Vector2[] = [];
+const hexPoints = (cx: number, cy: number) => {
+  const points: string[] = [];
 
   for (let index = 0; index < 6; index += 1) {
-    const angle = ((Math.PI / 180) * (60 * index + 30));
-    points.push(new Phaser.Math.Vector2(
-      centerX + HEX_RADIUS * Math.cos(angle),
-      centerY + HEX_RADIUS * Math.sin(angle),
-    ));
+    const angle = ((Math.PI / 180) * (60 * index - 30));
+    const x = cx + HEX_SIZE * Math.cos(angle);
+    const y = cy + HEX_SIZE * Math.sin(angle);
+    points.push(`${x},${y}`);
   }
 
-  return points;
+  return points.join(' ');
+};
+
+const getTileColor = (owner: GameState['tiles'][string] | undefined, isReachable: boolean, isHoverPath: boolean) => {
+  if (isReachable) {
+    return reachableFill;
+  }
+
+  if (isHoverPath) {
+    return '#d4eba8';
+  }
+
+  if (owner === 'blue') {
+    return playerTheme.blue.soft;
+  }
+
+  if (owner === 'red') {
+    return playerTheme.red.soft;
+  }
+
+  return neutralTile;
 };
 
 const HexPrototypeGame = () => {
-  const mountRef = useRef<HTMLDivElement | null>(null);
+  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState());
+  const [hoveredHex, setHoveredHex] = useState<HexCoord | null>(null);
 
-  useEffect(() => {
-    if (!mountRef.current) {
-      return undefined;
+  const boardHexes = useMemo(() => getBoardHexes(), []);
+  const currentPlayer = gameState.currentPlayer;
+  const currentHex = gameState.peasants[currentPlayer];
+  const reachableTiles = useMemo(
+    () => getReachableTiles(gameState, currentPlayer),
+    [gameState, currentPlayer],
+  );
+  const reachableSet = useMemo(() => new Set(reachableTiles.map((hex) => coordKey(hex))), [reachableTiles]);
+
+  const hoverPath = useMemo(() => {
+    if (!hoveredHex) {
+      return [] as HexCoord[];
     }
 
-    const units: Unit[] = [
-      { id: 1, name: 'Frontline', q: -1, r: 0, color: 0xff8252, moveRange: 3 },
-      { id: 2, name: 'Archer', q: 1, r: 2, color: 0x7bc8ff, moveRange: 2 },
-      { id: 3, name: 'Guardian', q: 2, r: -1, color: 0x9ef0ab, moveRange: 2 },
-    ];
+    const path = getMovementPath(currentHex, hoveredHex);
+    return path ?? [];
+  }, [currentHex, hoveredHex]);
+  const hoverPathSet = useMemo(() => new Set(hoverPath.map((hex) => coordKey(hex))), [hoverPath]);
 
-    let selectedUnitId: number | null = units[0].id;
-    let sceneRef: Phaser.Scene | null = null;
-    let boardGraphics: Phaser.GameObjects.Graphics | null = null;
-    let selectionGraphics: Phaser.GameObjects.Graphics | null = null;
-    let unitContainer: Phaser.GameObjects.Container | null = null;
-    let instructionsText: Phaser.GameObjects.Text | null = null;
-
-    const getSelectedUnit = () => units.find((unit) => unit.id === selectedUnitId) ?? null;
-
-    const drawHex = (
-      graphics: Phaser.GameObjects.Graphics,
-      centerX: number,
-      centerY: number,
-      fillColor: number,
-      strokeColor: number,
-    ) => {
-      const vertices = getHexVertices(centerX, centerY);
-      graphics.fillStyle(fillColor, 1);
-      graphics.lineStyle(2, strokeColor, 1);
-
-      graphics.beginPath();
-      vertices.forEach((point, index) => {
-        if (index === 0) {
-          graphics.moveTo(point.x, point.y);
-          return;
-        }
-        graphics.lineTo(point.x, point.y);
-      });
-      graphics.closePath();
-      graphics.fillPath();
-      graphics.strokePath();
-    };
-
-    const refreshBoard = () => {
-      if (!sceneRef) {
-        return;
+  const territoryScores = useMemo(() => {
+    const scores = { blue: 0, red: 0 };
+    Object.values(gameState.tiles).forEach((owner) => {
+      if (owner === 'blue') {
+        scores.blue += 1;
       }
-
-      if (boardGraphics) {
-        boardGraphics.destroy();
+      if (owner === 'red') {
+        scores.red += 1;
       }
-      boardGraphics = sceneRef.add.graphics();
+    });
+    return scores;
+  }, [gameState.tiles]);
 
-      const selectedUnit = getSelectedUnit();
+  const handleHexClick = (destination: HexCoord) => {
+    if (gameState.status === 'finished') {
+      return;
+    }
 
-      for (let q = -BOARD_RADIUS; q <= BOARD_RADIUS; q += 1) {
-        for (let r = -BOARD_RADIUS; r <= BOARD_RADIUS; r += 1) {
-          const dist = Math.max(Math.abs(q), Math.abs(r), Math.abs(-q - r));
-          if (dist > BOARD_RADIUS) {
-            continue;
+    const nextState = applyMove(gameState, destination);
+    if (nextState !== gameState) {
+      setGameState(nextState);
+      setHoveredHex(null);
+    }
+  };
+
+  const resetGame = () => {
+    setGameState(createInitialGameState());
+    setHoveredHex(null);
+  };
+
+  return (
+    <div className="hex-game-panel">
+      <div className="hex-game-hud">
+        <div className="hud-block turn-block">
+          <span className="label">Turn</span>
+          <strong className={`turn-indicator ${currentPlayer}`}>
+            {playerTheme[currentPlayer].label}
+          </strong>
+        </div>
+
+        <div className="hud-block round-block">
+          <span className="label">Round</span>
+          <strong>{Math.min(gameState.roundNumber, MAX_ROUNDS)} / {MAX_ROUNDS}</strong>
+        </div>
+
+        <div className="hud-block score-block">
+          <span className="label">Territory</span>
+          <div className="score-row">
+            <span className="score-pill blue">Blue: {territoryScores.blue}</span>
+            <span className="score-pill red">Red: {territoryScores.red}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="game-status-row">
+        {gameState.status === 'finished' ? (
+          <div className="status-banner finished">
+            {gameState.winnerMessage || 'Game over.'}
+          </div>
+        ) : (
+          <div className="status-banner">
+            {playerTheme[currentPlayer].label} to move • select a highlighted hex to advance up to 2 spaces.
+          </div>
+        )}
+        <button type="button" className="restart-button" onClick={resetGame}>Restart</button>
+      </div>
+
+      <svg className="hex-board" viewBox="0 0 900 700" role="img" aria-label="Hex strategy board">
+        {boardHexes.map((hex) => {
+          const center = axialToPixel(hex.q, hex.r);
+          const key = coordKey(hex);
+          const owner = gameState.tiles[key];
+          const isReachable = reachableSet.has(key);
+          const isHoverPath = hoverPathSet.has(key);
+          const isCastle = areSameHex(hex, gameState.castles.blue) || areSameHex(hex, gameState.castles.red);
+          const unitForHex = Object.entries(gameState.peasants).find(([, position]) => areSameHex(position, hex));
+          const playerToken = unitForHex ? (unitForHex[0] as PlayerColor) : null;
+
+          let fill = getTileColor(owner, isReachable, isHoverPath);
+          let outlineColor = neutralDark;
+          let outlineWidth = 1.2;
+
+          if (isReachable) {
+            outlineColor = rangeStroke;
+            outlineWidth = 2;
           }
 
-          const offset = axialToPixel(q, r);
-          const centerX = BOARD_ORIGIN_X + offset.x;
-          const centerY = BOARD_ORIGIN_Y + offset.y;
+          if (isHoverPath) {
+            outlineColor = '#6c8d44';
+            outlineWidth = 2.5;
+          }
 
-          const tileOccupied = units.some((unit) => unit.q === q && unit.r === r);
-          const tileReachable = Boolean(
-            selectedUnit
-            && !tileOccupied
-            && axialDistance({ q, r }, selectedUnit) <= selectedUnit.moveRange,
+          return (
+            <g
+              key={key}
+              className="hex-node"
+              onMouseEnter={() => {
+                if (isReachable) {
+                  setHoveredHex(hex);
+                }
+              }}
+              onMouseLeave={() => setHoveredHex(null)}
+              onClick={() => handleHexClick(hex)}
+            >
+              <polygon
+                points={hexPoints(center.x, center.y)}
+                fill={fill}
+                stroke={outlineColor}
+                strokeWidth={outlineWidth}
+                className={isReachable ? 'reachable-hex' : ''}
+              />
+
+              {isCastle && (() => {
+                const castleOwner = areSameHex(hex, gameState.castles.blue) ? 'blue' : 'red';
+                const castleColor = playerTheme[castleOwner].base;
+                return (
+                  <rect
+                    x={center.x - 18}
+                    y={center.y - 18}
+                    width={36}
+                    height={36}
+                    rx={6}
+                    fill={castleColor}
+                    stroke="#f6f2eb"
+                    strokeWidth={2}
+                  />
+                );
+              })()}
+
+              {playerToken && (
+                <circle
+                  cx={center.x}
+                  cy={center.y}
+                  r={13}
+                  fill={playerTheme[playerToken].base}
+                  stroke="#f5efe8"
+                  strokeWidth={3}
+                />
+              )}
+            </g>
           );
-
-          const fillColor = tileOccupied ? 0xdfead7 : tileReachable ? 0xcfe5cf : 0xe5dfd0;
-          const strokeColor = tileReachable ? 0x6f8e75 : 0x8a9283;
-          drawHex(boardGraphics, centerX, centerY, fillColor, strokeColor);
-        }
-      }
-
-      if (unitContainer) {
-        unitContainer.destroy();
-      }
-      unitContainer = sceneRef.add.container();
-
-      units.forEach((unit) => {
-        const offset = axialToPixel(unit.q, unit.r);
-        const centerX = BOARD_ORIGIN_X + offset.x;
-        const centerY = BOARD_ORIGIN_Y + offset.y;
-
-        const token = sceneRef.add.circle(centerX, centerY, 17, unit.color);
-        const outline = sceneRef.add.circle(centerX, centerY, 22, 0x000000, 0);
-        outline.setStrokeStyle(2, 0xf5efe8, 0.9);
-
-        const label = sceneRef.add.text(centerX, centerY + 26, unit.name, {
-          fontSize: '12px',
-          color: '#2b2d30',
-          backgroundColor: '#f6f3ee',
-          padding: { x: 4, y: 2 },
-        }).setOrigin(0.5);
-
-        unitContainer.add([token, outline, label]);
-      });
-
-      if (selectionGraphics) {
-        selectionGraphics.destroy();
-      }
-      selectionGraphics = sceneRef.add.graphics();
-
-      if (selectedUnit) {
-        const offset = axialToPixel(selectedUnit.q, selectedUnit.r);
-        const centerX = BOARD_ORIGIN_X + offset.x;
-        const centerY = BOARD_ORIGIN_Y + offset.y;
-        selectionGraphics.lineStyle(3, 0xc7a67a, 1);
-        selectionGraphics.strokeCircle(centerX, centerY, 28);
-      }
-    };
-
-    const handleTileClick = (q: number, r: number) => {
-      const selectedUnit = getSelectedUnit();
-      const occupied = units.find((unit) => unit.q === q && unit.r === r);
-
-      if (occupied) {
-        selectedUnitId = occupied.id;
-        if (instructionsText) {
-          instructionsText.setText(`Selected ${occupied.name}. Pick a highlighted tile to move.`);
-        }
-        refreshBoard();
-        return;
-      }
-
-      if (!selectedUnit) {
-        return;
-      }
-
-      if (axialDistance({ q, r }, selectedUnit) <= selectedUnit.moveRange) {
-        selectedUnit.q = q;
-        selectedUnit.r = r;
-        if (instructionsText) {
-          instructionsText.setText(`Moved ${selectedUnit.name} to (${q}, ${r}).`);
-        }
-        refreshBoard();
-      }
-    };
-
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      parent: mountRef.current,
-      width: 860,
-      height: 560,
-      backgroundColor: '#e9e1d6',
-      scene: {
-        create() {
-          sceneRef = this;
-          refreshBoard();
-
-          instructionsText = this.add.text(20, 16, 'Select a unit and click a highlighted hex to move.', {
-            fontSize: '18px',
-            color: '#2b2d30',
-            backgroundColor: '#f5efe8',
-            padding: { x: 10, y: 6 },
-          });
-
-          this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            const worldX = pointer.x;
-            const worldY = pointer.y;
-            let clickedTile: HexCoord | null = null;
-
-            for (let q = -BOARD_RADIUS; q <= BOARD_RADIUS; q += 1) {
-              for (let r = -BOARD_RADIUS; r <= BOARD_RADIUS; r += 1) {
-                const dist = Math.max(Math.abs(q), Math.abs(r), Math.abs(-q - r));
-                if (dist > BOARD_RADIUS) {
-                  continue;
-                }
-
-                const offset = axialToPixel(q, r);
-                const centerX = BOARD_ORIGIN_X + offset.x;
-                const centerY = BOARD_ORIGIN_Y + offset.y;
-                const dx = worldX - centerX;
-                const dy = worldY - centerY;
-
-                if (Math.hypot(dx, dy) <= HEX_RADIUS + 4) {
-                  clickedTile = { q, r };
-                  break;
-                }
-              }
-              if (clickedTile) {
-                break;
-              }
-            }
-
-            if (clickedTile) {
-              handleTileClick(clickedTile.q, clickedTile.r);
-            }
-          });
-        },
-      },
-    };
-
-    const game = new Phaser.Game(config);
-
-    return () => {
-      game.destroy(true, false);
-    };
-  }, []);
-
-  return <div ref={mountRef} />;
+        })}
+      </svg>
+    </div>
+  );
 };
 
 export default HexPrototypeGame;

@@ -6,10 +6,10 @@ const GamesPage = () => {
   return (
     <div className="games-page">
       <div className="blerb-box">
-        <h2>Game Prototypes</h2>
+        <h2>Border Siege</h2>
         <p>
-          This page is the shared sandbox for strategy prototype experiments. The first build is a small
-          isometric hex board with a few base units that can move across several tiles.
+          A small, playable medieval skirmish prototype built on a circular hex grid. Each side controls a castle,
+          a peasant, and a short movement window to claim territory before the ten-round match ends.
         </p>
       </div>
 
