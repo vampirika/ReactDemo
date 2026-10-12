@@ -129,6 +129,13 @@
   flex-wrap: wrap;
 }
 
+.action-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .status-banner {
   flex: 1 1 auto;
   min-height: 48px;
@@ -147,7 +154,8 @@
   border-color: rgba(83, 122, 76, 0.4);
 }
 
-.restart-button {
+.restart-button,
+.end-turn-button {
   appearance: none;
   background: linear-gradient(180deg, #f5efe8 0%, #e6dcc9 100%);
   color: #2d2a27;
@@ -159,9 +167,19 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.restart-button:hover {
+.restart-button:hover,
+.end-turn-button:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(64, 54, 46, 0.12);
+}
+
+.end-turn-button {
+  background: linear-gradient(180deg, #f7f4ef 0%, #e0d9d1 100%);
+}
+
+.end-turn-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .hex-board {

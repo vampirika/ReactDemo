@@ -4,6 +4,7 @@ import {
   areSameHex,
   coordKey,
   createInitialGameState,
+  endTurn,
   getBoardHexes,
   getMovementPath,
   getReachableTiles,
@@ -13,19 +14,18 @@ import {
   type PlayerColor,
 } from '../game/hexStrategy.ts';
 
-const HEX_SIZE = 30;
+const HEX_SIZE = 32;
 const BOARD_CENTER_X = 440;
 const BOARD_CENTER_Y = 330;
 
-const playerTheme: Record<PlayerColor, { base: string; soft: string; light: string; label: string }> = {
-  blue: { base: '#4d7ae6', soft: '#dfeaff', light: '#eef5ff', label: 'Blue' },
-  red: { base: '#e66d6d', soft: '#f9dfe1', light: '#fff0f0', label: 'Red' },
+const playerTheme: Record<PlayerColor, { base: string; soft: string; label: string }> = {
+  blue: { base: '#4d7ae6', soft: '#dfeaff', label: 'Blue' },
+  red: { base: '#e66d6d', soft: '#f9dfe1', label: 'Red' },
 };
 
-const neutralTile = '#e2d5c2';
-const neutralDark = '#bca887';
-const reachableFill = '#bfe6a8';
-const rangeStroke = '#5f7b4f';
+const neutralTile = '#e7d8c5';
+const neutralStroke = '#b39c7f';
+const rangeStroke = '#5d7f4f';
 
 const axialToPixel = (q: number, r: number) => ({
   x: HEX_SIZE * Math.sqrt(3) * (q + r / 2) + BOARD_CENTER_X,
@@ -36,7 +36,7 @@ const hexPoints = (cx: number, cy: number) => {
   const points: string[] = [];
 
   for (let index = 0; index < 6; index += 1) {
-    const angle = ((Math.PI / 180) * (60 * index - 30));
+    const angle = (Math.PI / 180) * (60 * index - 30);
     const x = cx + HEX_SIZE * Math.cos(angle);
     const y = cy + HEX_SIZE * Math.sin(angle);
     points.push(`${x},${y}`);
@@ -45,15 +45,7 @@ const hexPoints = (cx: number, cy: number) => {
   return points.join(' ');
 };
 
-const getTileColor = (owner: GameState['tiles'][string] | undefined, isReachable: boolean, isHoverPath: boolean) => {
-  if (isReachable) {
-    return reachableFill;
-  }
-
-  if (isHoverPath) {
-    return '#d4eba8';
-  }
-
+const getTileFill = (owner: GameState['tiles'][string] | undefined) => {
   if (owner === 'blue') {
     return playerTheme.blue.soft;
   }
@@ -67,26 +59,40 @@ const getTileColor = (owner: GameState['tiles'][string] | undefined, isReachable
 
 const HexPrototypeGame = () => {
   const [gameState, setGameState] = useState<GameState>(() => createInitialGameState());
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>('blue-1');
   const [hoveredHex, setHoveredHex] = useState<HexCoord | null>(null);
 
   const boardHexes = useMemo(() => getBoardHexes(), []);
   const currentPlayer = gameState.currentPlayer;
-  const currentHex = gameState.peasants[currentPlayer];
-  const reachableTiles = useMemo(
-    () => getReachableTiles(gameState, currentPlayer),
-    [gameState, currentPlayer],
+  const selectedUnit = useMemo(
+    () => gameState.peasants[currentPlayer].find((peasant) => peasant.id === selectedUnitId) ?? null,
+    [currentPlayer, gameState.peasants, selectedUnitId],
   );
-  const reachableSet = useMemo(() => new Set(reachableTiles.map((hex) => coordKey(hex))), [reachableTiles]);
 
-  const hoverPath = useMemo(() => {
-    if (!hoveredHex) {
+  const reachableTiles = useMemo(() => {
+    if (!selectedUnit) {
       return [] as HexCoord[];
     }
 
-    const path = getMovementPath(currentHex, hoveredHex);
-    return path ?? [];
-  }, [currentHex, hoveredHex]);
-  const hoverPathSet = useMemo(() => new Set(hoverPath.map((hex) => coordKey(hex))), [hoverPath]);
+    return getReachableTiles(gameState, currentPlayer, selectedUnit.id);
+  }, [currentPlayer, gameState, selectedUnit]);
+
+  const reachableSet = useMemo(() => new Set(reachableTiles.map((hex) => coordKey(hex))), [reachableTiles]);
+
+  const previewPath = useMemo(() => {
+    if (!selectedUnit || !hoveredHex) {
+      return [] as HexCoord[];
+    }
+
+    const path = getMovementPath(selectedUnit.position, hoveredHex, 2);
+    if (!path) {
+      return [] as HexCoord[];
+    }
+
+    return path;
+  }, [hoveredHex, selectedUnit]);
+
+  const previewPathSet = useMemo(() => new Set(previewPath.map((hex) => coordKey(hex))), [previewPath]);
 
   const territoryScores = useMemo(() => {
     const scores = { blue: 0, red: 0 };
@@ -101,39 +107,76 @@ const HexPrototypeGame = () => {
     return scores;
   }, [gameState.tiles]);
 
+  const allAvailableUnits = gameState.peasants[currentPlayer].filter((peasant) => !peasant.moved);
+
   const handleHexClick = (destination: HexCoord) => {
     if (gameState.status === 'finished') {
       return;
     }
 
-    const nextState = applyMove(gameState, destination);
-    if (nextState !== gameState) {
-      setGameState(nextState);
-      setHoveredHex(null);
-    }
-  };
+    const clickedPeasantOnHex = Object.values(gameState.peasants)
+      .flat()
+      .find((peasant) => areSameHex(peasant.position, destination) && peasant.player === currentPlayer && !peasant.moved);
 
-  const resetGame = () => {
-    setGameState(createInitialGameState());
+    if (clickedPeasantOnHex) {
+      setSelectedUnitId(clickedPeasantOnHex.id);
+      setHoveredHex(null);
+      return;
+    }
+
+    if (!selectedUnit || selectedUnit.moved) {
+      const nextSelection = allAvailableUnits[0] ?? null;
+      setSelectedUnitId(nextSelection ? nextSelection.id : null);
+      return;
+    }
+
+    const nextState = applyMove(gameState, selectedUnit.id, destination);
+    if (nextState === gameState) {
+      return;
+    }
+
+    const nextAvailable = nextState.peasants[currentPlayer].find((peasant) => !peasant.moved) ?? null;
+    setGameState(nextState);
+    setSelectedUnitId(nextAvailable ? nextAvailable.id : null);
     setHoveredHex(null);
   };
+
+  const handleEndTurn = () => {
+    const nextState = endTurn(gameState);
+    setGameState(nextState);
+    const nextSelection = nextState.peasants[nextState.currentPlayer].find((peasant) => !peasant.moved) ?? null;
+    setSelectedUnitId(nextSelection ? nextSelection.id : null);
+    setHoveredHex(null);
+  };
+
+  const handleRestart = () => {
+    const freshGame = createInitialGameState();
+    setGameState(freshGame);
+    setSelectedUnitId(freshGame.peasants.blue[0].id);
+    setHoveredHex(null);
+  };
+
+  const previewPoints = previewPath.length > 1
+    ? previewPath.map((hex) => {
+        const point = axialToPixel(hex.q, hex.r);
+        return `${point.x},${point.y}`;
+      }).join(' ')
+    : '';
 
   return (
     <div className="hex-game-panel">
       <div className="hex-game-hud">
-        <div className="hud-block turn-block">
+        <div className="hud-block">
           <span className="label">Turn</span>
-          <strong className={`turn-indicator ${currentPlayer}`}>
-            {playerTheme[currentPlayer].label}
-          </strong>
+          <strong className={`turn-indicator ${currentPlayer}`}>{playerTheme[currentPlayer].label}</strong>
         </div>
 
-        <div className="hud-block round-block">
+        <div className="hud-block">
           <span className="label">Round</span>
           <strong>{Math.min(gameState.roundNumber, MAX_ROUNDS)} / {MAX_ROUNDS}</strong>
         </div>
 
-        <div className="hud-block score-block">
+        <div className="hud-block">
           <span className="label">Territory</span>
           <div className="score-row">
             <span className="score-pill blue">Blue: {territoryScores.blue}</span>
@@ -144,48 +187,68 @@ const HexPrototypeGame = () => {
 
       <div className="game-status-row">
         {gameState.status === 'finished' ? (
-          <div className="status-banner finished">
-            {gameState.winnerMessage || 'Game over.'}
-          </div>
+          <div className="status-banner finished">{gameState.winnerMessage || 'Game over.'}</div>
         ) : (
           <div className="status-banner">
-            {playerTheme[currentPlayer].label} to move • select a highlighted hex to advance up to 2 spaces.
+            {playerTheme[currentPlayer].label} to move • select a peasant then choose a reachable hex.
           </div>
         )}
-        <button type="button" className="restart-button" onClick={resetGame}>Restart</button>
+
+        <div className="action-group">
+          <button type="button" className="restart-button" onClick={handleRestart}>Restart</button>
+          <button
+            type="button"
+            className="end-turn-button"
+            onClick={handleEndTurn}
+            disabled={gameState.status === 'finished'}
+          >
+            End Turn
+          </button>
+        </div>
       </div>
 
       <svg className="hex-board" viewBox="0 0 900 700" role="img" aria-label="Hex strategy board">
+        <defs>
+          <marker id="route-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#614b3a" />
+          </marker>
+        </defs>
+
+        {previewPoints && (
+          <polyline
+            points={previewPoints}
+            fill="none"
+            stroke="#614b3a"
+            strokeWidth="4"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            markerEnd="url(#route-arrow)"
+            opacity="0.9"
+          />
+        )}
+
         {boardHexes.map((hex) => {
           const center = axialToPixel(hex.q, hex.r);
           const key = coordKey(hex);
           const owner = gameState.tiles[key];
-          const isReachable = reachableSet.has(key);
-          const isHoverPath = hoverPathSet.has(key);
+          const isReachable = selectedUnit ? reachableSet.has(key) : false;
+          const isPreview = selectedUnit ? previewPathSet.has(key) : false;
+          const isSelectedHex = selectedUnit ? areSameHex(hex, selectedUnit.position) : false;
           const isCastle = areSameHex(hex, gameState.castles.blue) || areSameHex(hex, gameState.castles.red);
-          const unitForHex = Object.entries(gameState.peasants).find(([, position]) => areSameHex(position, hex));
-          const playerToken = unitForHex ? (unitForHex[0] as PlayerColor) : null;
+          const peasantOnHex = Object.values(gameState.peasants)
+            .flat()
+            .find((peasant) => areSameHex(peasant.position, hex));
 
-          let fill = getTileColor(owner, isReachable, isHoverPath);
-          let outlineColor = neutralDark;
-          let outlineWidth = 1.2;
-
-          if (isReachable) {
-            outlineColor = rangeStroke;
-            outlineWidth = 2;
-          }
-
-          if (isHoverPath) {
-            outlineColor = '#6c8d44';
-            outlineWidth = 2.5;
-          }
+          const tileFill = getTileFill(owner);
+          const strokeColor = isReachable ? rangeStroke : neutralStroke;
+          const strokeWidth = isReachable ? 3 : isPreview ? 3.5 : 1.2;
 
           return (
             <g
               key={key}
               className="hex-node"
               onMouseEnter={() => {
-                if (isReachable) {
+                if (selectedUnit && isReachable) {
                   setHoveredHex(hex);
                 }
               }}
@@ -194,15 +257,15 @@ const HexPrototypeGame = () => {
             >
               <polygon
                 points={hexPoints(center.x, center.y)}
-                fill={fill}
-                stroke={outlineColor}
-                strokeWidth={outlineWidth}
+                fill={tileFill}
+                stroke={strokeColor}
+                strokeWidth={strokeWidth}
+                opacity={isReachable ? 0.98 : 1}
                 className={isReachable ? 'reachable-hex' : ''}
               />
 
               {isCastle && (() => {
                 const castleOwner = areSameHex(hex, gameState.castles.blue) ? 'blue' : 'red';
-                const castleColor = playerTheme[castleOwner].base;
                 return (
                   <rect
                     x={center.x - 18}
@@ -210,22 +273,34 @@ const HexPrototypeGame = () => {
                     width={36}
                     height={36}
                     rx={6}
-                    fill={castleColor}
-                    stroke="#f6f2eb"
+                    fill={playerTheme[castleOwner].base}
+                    stroke="#f4f0ea"
                     strokeWidth={2}
                   />
                 );
               })()}
 
-              {playerToken && (
-                <circle
-                  cx={center.x}
-                  cy={center.y}
-                  r={13}
-                  fill={playerTheme[playerToken].base}
-                  stroke="#f5efe8"
-                  strokeWidth={3}
-                />
+              {peasantOnHex && (
+                <g
+                  transform={`translate(${center.x} ${center.y})`}
+                  style={{ transition: 'transform 180ms ease-in-out' }}
+                >
+                  <circle
+                    r={13}
+                    fill={playerTheme[peasantOnHex.player].base}
+                    stroke={selectedUnit?.id === peasantOnHex.id ? '#f6f2ed' : '#f5efe8'}
+                    strokeWidth={selectedUnit?.id === peasantOnHex.id ? 4 : 3}
+                    opacity={peasantOnHex.moved ? 0.7 : 1}
+                  />
+
+                  {selectedUnit?.id === peasantOnHex.id && (
+                    <circle r={20} fill="none" stroke="#d7d1c4" strokeWidth={2.5} strokeDasharray="4 6" />
+                  )}
+
+                  {isSelectedHex && (
+                    <circle r={23} fill="none" stroke="#5f7b4f" strokeWidth={2.5} />
+                  )}
+                </g>
               )}
             </g>
           );

@@ -6,6 +6,13 @@ export type HexCoord = {
   r: number;
 };
 
+export type Peasant = {
+  id: string;
+  player: PlayerColor;
+  position: HexCoord;
+  moved: boolean;
+};
+
 export type GameStatus = 'playing' | 'finished';
 
 export type GameState = {
@@ -15,7 +22,7 @@ export type GameState = {
   status: GameStatus;
   tiles: Record<string, TileOwner>;
   castles: Record<PlayerColor, HexCoord>;
-  peasants: Record<PlayerColor, HexCoord>;
+  peasants: Record<PlayerColor, Peasant[]>;
   winner: PlayerColor | 'tie' | null;
   winnerMessage: string;
 };
@@ -48,12 +55,12 @@ export const getBoardHexes = (): HexCoord[] => {
 };
 
 export const getNeighbors = ({ q, r }: HexCoord): HexCoord[] => [
-  { q: q + 1, r: r },
+  { q: q + 1, r },
   { q: q + 1, r: r - 1 },
-  { q: q, r: r - 1 },
-  { q: q - 1, r: r },
+  { q, r: r - 1 },
+  { q: q - 1, r },
   { q: q - 1, r: r + 1 },
-  { q: q, r: r + 1 },
+  { q, r: r + 1 },
 ].filter(isInsideBoard);
 
 export const getHexDistance = (a: HexCoord, b: HexCoord) => {
@@ -74,19 +81,58 @@ export const buildBoardTiles = () => {
   return tiles;
 };
 
+export const getPeasantById = (state: GameState, peasantId: string) => {
+  for (const player of ['blue', 'red'] as PlayerColor[]) {
+    const unit = state.peasants[player].find((peasant) => peasant.id === peasantId);
+    if (unit) {
+      return unit;
+    }
+  }
+
+  return null;
+};
+
+export const getPeasantAtHex = (state: GameState, hex: HexCoord, ignoreId?: string) => {
+  for (const player of ['blue', 'red'] as PlayerColor[]) {
+    const unit = state.peasants[player].find(
+      (peasant) => peasant.id !== ignoreId && areSameHex(peasant.position, hex),
+    );
+    if (unit) {
+      return unit;
+    }
+  }
+
+  return null;
+};
+
 export const createInitialGameState = (): GameState => {
   const tiles = buildBoardTiles();
   const castles: Record<PlayerColor, HexCoord> = {
     blue: { q: -5, r: 0 },
     red: { q: 5, r: 0 },
   };
-  const peasants: Record<PlayerColor, HexCoord> = {
-    blue: { q: -3, r: 0 },
-    red: { q: 3, r: 0 },
+
+  const peasants: Record<PlayerColor, Peasant[]> = {
+    blue: [
+      { id: 'blue-1', player: 'blue', position: { q: -4, r: 0 }, moved: false },
+      { id: 'blue-2', player: 'blue', position: { q: -3, r: 1 }, moved: false },
+    ],
+    red: [
+      { id: 'red-1', player: 'red', position: { q: 4, r: 0 }, moved: false },
+      { id: 'red-2', player: 'red', position: { q: 3, r: -1 }, moved: false },
+    ],
   };
 
   tiles[coordKey(castles.blue)] = 'blue';
   tiles[coordKey(castles.red)] = 'red';
+
+  peasants.blue.forEach((peasant) => {
+    tiles[coordKey(peasant.position)] = 'blue';
+  });
+
+  peasants.red.forEach((peasant) => {
+    tiles[coordKey(peasant.position)] = 'red';
+  });
 
   return {
     currentPlayer: 'blue',
@@ -116,7 +162,7 @@ export const countTerritory = (state: GameState) => {
   return counts;
 };
 
-export const getMovementPath = (from: HexCoord, to: HexCoord): HexCoord[] | null => {
+export const getMovementPath = (from: HexCoord, to: HexCoord, maxDistance = 2): HexCoord[] | null => {
   if (areSameHex(from, to)) {
     return [from];
   }
@@ -145,7 +191,7 @@ export const getMovementPath = (from: HexCoord, to: HexCoord): HexCoord[] | null
         return nextPath;
       }
 
-      if (current.path.length <= 2) {
+      if (current.path.length <= maxDistance) {
         visited.add(neighborKey);
         queue.push({ hex: neighbor, path: nextPath });
       }
@@ -155,10 +201,18 @@ export const getMovementPath = (from: HexCoord, to: HexCoord): HexCoord[] | null
   return null;
 };
 
-export const getReachableTiles = (state: GameState, player: PlayerColor): HexCoord[] => {
-  const origin = state.peasants[player];
+export const getReachableTiles = (state: GameState, player: PlayerColor, peasantId?: string): HexCoord[] => {
+  const activePeasant = peasantId
+    ? state.peasants[player].find((peasant) => peasant.id === peasantId)
+    : state.peasants[player].find((peasant) => !peasant.moved) ?? state.peasants[player][0];
+
+  if (!activePeasant) {
+    return [];
+  }
+
+  const origin = activePeasant.position;
   const reachable = new Map<string, HexCoord>();
-  const queue: Array<{ hex: HexCoord; distance: number }> = [{ hex: origin, distance: 0 }];
+  const queue: Array<{ hex: HexCoord; path: HexCoord[] }> = [{ hex: origin, path: [origin] }];
   const visited = new Set<string>([coordKey(origin)]);
 
   while (queue.length > 0) {
@@ -168,23 +222,56 @@ export const getReachableTiles = (state: GameState, player: PlayerColor): HexCoo
       continue;
     }
 
-    if (current.distance >= 2) {
+    if (current.path.length >= 3) {
       continue;
     }
 
     for (const neighbor of getNeighbors(current.hex)) {
       const neighborKey = coordKey(neighbor);
+
       if (visited.has(neighborKey)) {
         continue;
       }
 
+      const nextPath = [...current.path, neighbor];
+      const isOccupied = Boolean(getPeasantAtHex(state, neighbor, activePeasant.id));
+
+      if (isOccupied) {
+        continue;
+      }
+
       visited.add(neighborKey);
-      queue.push({ hex: neighbor, distance: current.distance + 1 });
       reachable.set(neighborKey, neighbor);
+      queue.push({ hex: neighbor, path: nextPath });
     }
   }
 
   return Array.from(reachable.values());
+};
+
+export const canPeasantMoveTo = (state: GameState, peasantId: string, destination: HexCoord) => {
+  const activePeasant = getPeasantById(state, peasantId);
+  if (!activePeasant || activePeasant.player !== state.currentPlayer || activePeasant.moved) {
+    return false;
+  }
+
+  const path = getMovementPath(activePeasant.position, destination, 2);
+  if (!path || path.length > 3) {
+    return false;
+  }
+
+  const occupiedByOther = getPeasantAtHex(state, destination, peasantId);
+  if (occupiedByOther) {
+    return false;
+  }
+
+  for (const step of path.slice(1)) {
+    if (getPeasantAtHex(state, step, peasantId)) {
+      return false;
+    }
+  }
+
+  return true;
 };
 
 export const determineWinner = (state: GameState) => {
@@ -204,54 +291,83 @@ export const determineWinner = (state: GameState) => {
   };
 };
 
-export const applyMove = (state: GameState, destination: HexCoord): GameState => {
+export const applyMove = (state: GameState, peasantId: string, destination: HexCoord): GameState => {
   if (state.status === 'finished') {
     return state;
   }
 
-  const player = state.currentPlayer;
-  const from = state.peasants[player];
-  const path = getMovementPath(from, destination);
-
-  if (!path || path.length > 3) {
+  const activePeasant = getPeasantById(state, peasantId);
+  if (!activePeasant || activePeasant.player !== state.currentPlayer || activePeasant.moved) {
     return state;
   }
 
-  const reachableTiles = getReachableTiles(state, player);
-  const isReachable = reachableTiles.some((tile) => areSameHex(tile, destination));
-  if (!isReachable) {
+  if (!canPeasantMoveTo(state, peasantId, destination)) {
+    return state;
+  }
+
+  const path = getMovementPath(activePeasant.position, destination, 2);
+  if (!path || path.length > 3) {
     return state;
   }
 
   const nextState: GameState = {
     ...state,
     tiles: { ...state.tiles },
-    peasants: { ...state.peasants },
+    peasants: {
+      blue: state.peasants.blue.map((peasant) => ({ ...peasant })),
+      red: state.peasants.red.map((peasant) => ({ ...peasant })),
+    },
     castles: { ...state.castles },
     winner: null,
     winnerMessage: '',
   };
 
+  const player = activePeasant.player;
+  const updatedPeasant = nextState.peasants[player].find((peasant) => peasant.id === peasantId);
+  if (!updatedPeasant) {
+    return state;
+  }
+
   path.forEach((hex) => {
     nextState.tiles[coordKey(hex)] = player;
   });
 
-  nextState.peasants[player] = destination;
-  nextState.totalTurns += 1;
+  updatedPeasant.position = destination;
+  updatedPeasant.moved = true;
 
-  const nextPlayer = player === 'blue' ? 'red' : 'blue';
+  return nextState;
+};
 
-  if (player === 'red') {
-    nextState.roundNumber += 1;
+export const endTurn = (state: GameState): GameState => {
+  if (state.status === 'finished') {
+    return state;
   }
 
-  nextState.currentPlayer = nextPlayer;
+  const currentPlayer = state.currentPlayer;
+  const nextPlayer: PlayerColor = currentPlayer === 'blue' ? 'red' : 'blue';
+
+  const nextState: GameState = {
+    ...state,
+    peasants: {
+      blue: state.peasants.blue.map((peasant) => ({ ...peasant, moved: false })),
+      red: state.peasants.red.map((peasant) => ({ ...peasant, moved: false })),
+    },
+    currentPlayer: nextPlayer,
+    totalTurns: state.totalTurns + 1,
+    winner: null,
+    winnerMessage: '',
+  };
+
+  if (currentPlayer === 'red') {
+    nextState.roundNumber += 1;
+  }
 
   if (nextState.totalTurns >= MAX_ROUNDS * 2) {
     nextState.status = 'finished';
     const result = determineWinner(nextState);
     nextState.winner = result.winner;
     nextState.winnerMessage = result.message;
+    nextState.currentPlayer = currentPlayer;
   }
 
   return nextState;

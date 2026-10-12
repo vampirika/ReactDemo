@@ -2,12 +2,13 @@ import {
   applyMove,
   createInitialGameState,
   determineWinner,
+  endTurn,
   getReachableTiles,
   MAX_ROUNDS,
 } from './hexStrategy';
 
 describe('hex strategy rules', () => {
-  test('initial board includes castle territories and a valid first turn state', () => {
+  test('initial board includes castle territories and valid peasant movement options', () => {
     const state = createInitialGameState();
 
     expect(state.currentPlayer).toBe('blue');
@@ -15,30 +16,41 @@ describe('hex strategy rules', () => {
     expect(state.status).toBe('playing');
     expect(state.tiles['-5,0']).toBe('blue');
     expect(state.tiles['5,0']).toBe('red');
-    expect(getReachableTiles(state, 'blue')).toEqual(
+    expect(state.peasants.blue).toHaveLength(2);
+    expect(state.peasants.red).toHaveLength(2);
+    expect(getReachableTiles(state, 'blue', state.peasants.blue[0].id)).toEqual(
       expect.arrayContaining([
-        { q: -2, r: 0 },
-        { q: -3, r: 1 },
-        { q: -3, r: -1 },
+        { q: -3, r: 0 },
+        { q: -4, r: 1 },
       ]),
     );
   });
 
-  test('a valid move claims the path and advances the turn', () => {
+  test('a valid two-step move claims the path and marks the unit as moved', () => {
     const state = createInitialGameState();
-    const next = applyMove(state, { q: -1, r: 0 });
+    const next = applyMove(state, state.peasants.blue[0].id, { q: -2, r: 0 });
 
-    expect(next.peasants.blue).toEqual({ q: -1, r: 0 });
+    expect(next.peasants.blue[0].position).toEqual({ q: -2, r: 0 });
+    expect(next.peasants.blue[0].moved).toBe(true);
+    expect(next.tiles['-3,0']).toBe('blue');
     expect(next.tiles['-2,0']).toBe('blue');
-    expect(next.currentPlayer).toBe('red');
-    expect(next.totalTurns).toBe(1);
   });
 
-  test('an invalid move is rejected', () => {
+  test('an invalid move is rejected when another peasant blocks the destination', () => {
     const state = createInitialGameState();
-    const next = applyMove(state, { q: 3, r: 0 });
+    const blockedMove = applyMove(state, state.peasants.blue[0].id, state.peasants.red[0].position);
 
-    expect(next).toEqual(state);
+    expect(blockedMove).toEqual(state);
+  });
+
+  test('turn advancement resets movement for the next player', () => {
+    const state = createInitialGameState();
+    const moved = applyMove(state, state.peasants.blue[0].id, { q: -2, r: 0 });
+    const next = endTurn(moved);
+
+    expect(next.currentPlayer).toBe('red');
+    expect(next.peasants.blue.every((peasant) => !peasant.moved)).toBe(true);
+    expect(next.totalTurns).toBe(1);
   });
 
   test('winner detection handles ties explicitly', () => {
@@ -53,18 +65,12 @@ describe('hex strategy rules', () => {
     expect(result.message).toContain('tie');
   });
 
-  test('game finishes after the required number of rounds', () => {
+  test('game finishes after the required number of player turns', () => {
     let state = createInitialGameState();
+    state.totalTurns = MAX_ROUNDS * 2 - 1;
+    state.currentPlayer = 'red';
 
-    for (let roundIndex = 0; roundIndex < MAX_ROUNDS * 2; roundIndex += 1) {
-      const activePlayer = state.currentPlayer;
-      const currentHex = state.peasants[activePlayer];
-      const moveTarget = activePlayer === 'blue'
-        ? { q: currentHex.q + 1, r: currentHex.r }
-        : { q: currentHex.q - 1, r: currentHex.r };
-
-      state = applyMove(state, moveTarget);
-    }
+    state = endTurn(state);
 
     expect(state.status).toBe('finished');
     expect(state.winner).not.toBeNull();
