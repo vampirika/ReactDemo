@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 
 function ThemeToggle() {
     const getInitialTheme = () => {
-        const savedTheme = localStorage.getItem('theme');
+        const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
         if (savedTheme) {
           return savedTheme;
-        } else {
-          const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          return prefersDarkMode ? 'dark' : 'dark';
         }
+
+        if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+          const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          return prefersDarkMode ? 'dark' : 'light';
+        }
+
+        return 'dark';
       };
 
   const [theme, setTheme] = useState(getInitialTheme);
