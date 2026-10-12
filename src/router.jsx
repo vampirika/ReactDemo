@@ -8,7 +8,6 @@ import GamesPage from './pages/GamesPage.tsx';
 import ToDoPage from './pages/toDoPage.tsx';
 import CardsAndScrollsPage from './pages/CardsAndScrollsPage.tsx';
 import ButtonsPage from './pages/ButtonsPage.tsx';
-import PokerPage from './pages/storyPokerPage.tsx';
 
 const routes = [
     {
@@ -17,7 +16,6 @@ const routes = [
       errorElement: <div>Wrong way!</div>,
       children: [
         { path: '/', element: <Homepage /> },
-        { path: '/poker', element: <PokerPage /> },
         { path: '/buttons', element: <ButtonsPage /> },
         { path: '/images', element: <ImagesPage /> },
         { path: '/crud', element: <CrudPage /> },
