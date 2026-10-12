@@ -47,6 +47,13 @@ This repository is organized around a lightweight SPA shell, but it also include
 
 This is a demo app, not a backend-heavy project. Prefer small, local changes; keep game logic separate from rendering where possible; and avoid introducing global app state unless a feature truly requires it.
 
+## Project guardrails from the repo-specific instructions
+
+- Keep work inside `G:\Coding\ReactApp\react-demo` and its subfolders; do not read or modify anything outside the repository.
+- Do not change secrets, environment variables, or `.env` files unless the user explicitly asks for a template or a safe local placeholder.
+- Do not modify deployment, hosting, or CI configuration unless specifically required and approved.
+- The current focus is to keep the codebase clean and to host playable game prototypes on the website.
+
 ## Conventions specific to this codebase
 
 - The repo is a mixed JS/TSX codebase: some files are `.js`/`.jsx` while others are `.ts`/`.tsx`. Do not assume it is fully TypeScript-only.

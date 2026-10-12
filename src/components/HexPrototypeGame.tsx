@@ -1,22 +1,25 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  applyDeploymentMove,
   applyMove,
   areSameHex,
+  beginMatchAfterDeployment,
   coordKey,
+  createDeploymentGameState,
   createInitialGameState,
   endTurn,
   getBoardHexes,
-  getMovementPath,
   getMovementPaths,
   getPeasantAtHex,
   getReachableTiles,
+  isHexInDeploymentZone,
   MAX_KNIGHT_MOVEMENT,
   MAX_PEASANT_MOVEMENT,
   MAX_ROUNDS,
   type GameState,
   type HexCoord,
   type PlayerColor,
-} from '../game/hexStrategy.ts';
+} from '../game/hexStrategy';
 
 const HEX_SIZE = 32;
 const BOARD_CENTER_X = 440;
@@ -28,8 +31,8 @@ const playerTheme: Record<PlayerColor, { base: string; soft: string; dark: strin
 };
 
 const neutralTile = '#e7d8c5';
-const neutralStroke = '#b39c7f';
-const rangeStroke = '#5d7f4f';
+const neutralStroke = '#4a4037';
+const rangeStroke = '#385e3a';
 
 const axialToPixel = (q: number, r: number) => ({
   x: HEX_SIZE * Math.sqrt(3) * (q + r / 2) + BOARD_CENTER_X,
@@ -78,7 +81,6 @@ const choosePreferredRoute = (
     x: hoverPoint.x - destinationCenter.x,
     y: hoverPoint.y - destinationCenter.y,
   };
-  const pointerMagnitude = Math.hypot(pointerVector.x, pointerVector.y) || 1;
 
   const bestPath = candidatePaths.reduce((best, path) => {
     const previousHex = path[path.length - 2];
@@ -131,27 +133,60 @@ const getTileFill = (owner: GameState['tiles'][string] | undefined) => {
   return neutralTile;
 };
 
-const HexPrototypeGame = () => {
-  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState());
+type HexPrototypeGameProps = {
+  initialGameState?: GameState;
+  playerColour?: PlayerColor;
+  roomId?: string;
+  onGameStateChange?: (nextState: GameState) => void | Promise<void>;
+  onLeaveRoom?: () => void;
+};
+
+const HexPrototypeGame = ({
+  initialGameState = createInitialGameState(),
+  playerColour,
+  roomId,
+  onGameStateChange,
+  onLeaveRoom,
+}: HexPrototypeGameProps) => {
+  const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>('blue-peasant-1');
   const [hoveredHex, setHoveredHex] = useState<HexCoord | null>(null);
   const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(null);
 
+  useEffect(() => {
+    setGameState(initialGameState);
+    const desiredPlayer = initialGameState.status === 'deploying' ? (playerColour ?? 'blue') : initialGameState.currentPlayer;
+    const firstUsableUnit = initialGameState.peasants[desiredPlayer].find((peasant) => peasant.movementLeft > 0)?.id ?? null;
+    setSelectedUnitId(firstUsableUnit);
+  }, [initialGameState, playerColour]);
+
   const boardHexes = useMemo(() => getBoardHexes(), []);
   const currentPlayer = gameState.currentPlayer;
+  const localPlayerColour = playerColour ?? currentPlayer;
+  const isDeploymentPhase = gameState.status === 'deploying';
+  const isLocalTurn = !isDeploymentPhase && currentPlayer === localPlayerColour;
+  const activePlayer = isDeploymentPhase ? localPlayerColour : currentPlayer;
   const selectedUnit = useMemo(
-    () => gameState.peasants[currentPlayer].find((peasant) => peasant.id === selectedUnitId) ?? null,
-    [currentPlayer, gameState.peasants, selectedUnitId],
+    () => gameState.peasants[activePlayer].find((peasant) => peasant.id === selectedUnitId) ?? null,
+    [activePlayer, gameState.peasants, selectedUnitId],
   );
   const routeColor = selectedUnit ? playerTheme[selectedUnit.player].dark : '#614b3a';
+  const localPlayerUnits = gameState.peasants[localPlayerColour];
+  const hasAllUnitsPlaced = localPlayerUnits.every((unit) => isHexInDeploymentZone(localPlayerColour, unit.position));
+  const visibleUnits = useMemo(
+    () => Object.values(gameState.peasants)
+      .flat()
+      .filter((unit) => !isDeploymentPhase || unit.player === localPlayerColour),
+    [gameState.peasants, isDeploymentPhase, localPlayerColour],
+  );
 
   const reachableTiles = useMemo(() => {
-    if (!selectedUnit) {
+    if (!selectedUnit || isDeploymentPhase) {
       return [] as HexCoord[];
     }
 
     return getReachableTiles(gameState, currentPlayer, selectedUnit.id);
-  }, [currentPlayer, gameState, selectedUnit]);
+  }, [currentPlayer, gameState, isDeploymentPhase, selectedUnit]);
 
   const reachableSet = useMemo(() => new Set(reachableTiles.map((hex) => coordKey(hex))), [reachableTiles]);
 
@@ -193,8 +228,82 @@ const HexPrototypeGame = () => {
 
   const allAvailableUnits = gameState.peasants[currentPlayer].filter((peasant) => peasant.movementLeft > 0);
 
+  const applyStateUpdate = (nextState: GameState) => {
+    setGameState(nextState);
+    if (onGameStateChange) {
+      void onGameStateChange(nextState);
+    }
+  };
+
+  const handleDeploy = () => {
+    if (!isDeploymentPhase || gameState.status !== 'deploying' || !hasAllUnitsPlaced) {
+      return;
+    }
+
+    const nextState: GameState = {
+      ...gameState,
+      deploymentReady: {
+        ...gameState.deploymentReady,
+        [localPlayerColour]: true,
+      },
+    };
+
+    if (nextState.deploymentReady.blue && nextState.deploymentReady.red) {
+      const startedGame = beginMatchAfterDeployment(nextState);
+      const nextSelection = startedGame.peasants.blue.find((peasant) => peasant.movementLeft > 0)?.id ?? null;
+      setSelectedUnitId(nextSelection);
+      applyStateUpdate(startedGame);
+      return;
+    }
+
+    setSelectedUnitId(null);
+    applyStateUpdate(nextState);
+  };
+
   const handleHexClick = (destination: HexCoord) => {
     if (gameState.status === 'finished') {
+      return;
+    }
+
+    if (isDeploymentPhase) {
+      const clickedUnit = visibleUnits.find((unit) => areSameHex(unit.position, destination));
+
+      if (clickedUnit) {
+        setSelectedUnitId(clickedUnit.id);
+        setHoveredHex(null);
+        setHoverPoint(null);
+        return;
+      }
+
+      if (!selectedUnit || selectedUnit.player !== localPlayerColour) {
+        const nextSelection = localPlayerUnits.find((unit) => isHexInDeploymentZone(localPlayerColour, unit.position)) ?? null;
+        setSelectedUnitId(nextSelection ? nextSelection.id : null);
+        setHoverPoint(null);
+        return;
+      }
+
+      if (!isHexInDeploymentZone(localPlayerColour, destination)) {
+        return;
+      }
+
+      const occupiedTarget = visibleUnits.find((unit) => areSameHex(unit.position, destination) && unit.id !== selectedUnit.id);
+      if (occupiedTarget) {
+        return;
+      }
+
+      const nextState = applyDeploymentMove(gameState, selectedUnit.id, destination);
+      if (nextState === gameState) {
+        return;
+      }
+
+      applyStateUpdate(nextState);
+      setSelectedUnitId(selectedUnit.id);
+      setHoveredHex(null);
+      setHoverPoint(null);
+      return;
+    }
+
+    if (!isLocalTurn) {
       return;
     }
 
@@ -235,15 +344,19 @@ const HexPrototypeGame = () => {
       ?? nextState.peasants[currentPlayer].find((peasant) => peasant.movementLeft > 0)
       ?? null;
 
-    setGameState(nextState);
+    applyStateUpdate(nextState);
     setSelectedUnitId(nextSelected ? nextSelected.id : null);
     setHoveredHex(null);
     setHoverPoint(null);
   };
 
   const handleEndTurn = () => {
+    if (!isLocalTurn) {
+      return;
+    }
+
     const nextState = endTurn(gameState);
-    setGameState(nextState);
+    applyStateUpdate(nextState);
     const nextSelection = nextState.peasants[nextState.currentPlayer].find((peasant) => peasant.movementLeft > 0) ?? null;
     setSelectedUnitId(nextSelection ? nextSelection.id : null);
     setHoveredHex(null);
@@ -251,11 +364,14 @@ const HexPrototypeGame = () => {
   };
 
   const handleRestart = () => {
-    const freshGame = createInitialGameState();
+    const freshGame = createDeploymentGameState();
     setGameState(freshGame);
-    setSelectedUnitId(freshGame.peasants.blue[0].id);
+    setSelectedUnitId(null);
     setHoveredHex(null);
     setHoverPoint(null);
+    if (onGameStateChange) {
+      void onGameStateChange(freshGame);
+    }
   };
 
   const previewPoints = previewPath.length > 1
@@ -288,8 +404,19 @@ const HexPrototypeGame = () => {
       </div>
 
       <div className="game-status-row">
+        {roomId && (
+          <div className="board-room-code">
+            <span>Room</span>
+            <strong>{roomId}</strong>
+          </div>
+        )}
+
         {gameState.status === 'finished' ? (
           <div className="status-banner finished">{gameState.winnerMessage || 'Game over.'}</div>
+        ) : gameState.status === 'deploying' ? (
+          <div className="status-banner">
+            Deploy your force within two hexes of your castle. Choose each unit and click an open highlighted tile.
+          </div>
         ) : (
           <div className="status-banner">
             {playerTheme[currentPlayer].label} to move • select a peasant then choose a reachable hex.
@@ -298,14 +425,28 @@ const HexPrototypeGame = () => {
 
         <div className="action-group">
           <button type="button" className="restart-button" onClick={handleRestart}>Restart</button>
-          <button
-            type="button"
-            className="end-turn-button"
-            onClick={handleEndTurn}
-            disabled={gameState.status === 'finished'}
-          >
-            End Turn
-          </button>
+          {onLeaveRoom && (
+            <button type="button" className="secondary-button" onClick={onLeaveRoom}>Leave room</button>
+          )}
+          {gameState.status === 'deploying' ? (
+            <button
+              type="button"
+              className="end-turn-button"
+              onClick={handleDeploy}
+              disabled={!hasAllUnitsPlaced || gameState.deploymentReady[localPlayerColour]}
+            >
+              {gameState.deploymentReady[localPlayerColour] ? 'Deployed' : 'Deploy'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="end-turn-button"
+              onClick={handleEndTurn}
+              disabled={gameState.status === 'finished'}
+            >
+              End Turn
+            </button>
+          )}
         </div>
       </div>
 
@@ -318,13 +459,15 @@ const HexPrototypeGame = () => {
           const isPreview = selectedUnit ? previewPathSet.has(key) : false;
           const isSelectedHex = selectedUnit ? areSameHex(hex, selectedUnit.position) : false;
           const isCastle = areSameHex(hex, gameState.castles.blue) || areSameHex(hex, gameState.castles.red);
-          const unitOnHex = Object.values(gameState.peasants)
-            .flat()
-            .find((peasant) => areSameHex(peasant.position, hex));
+          const unitOnHex = visibleUnits.find((peasant) => areSameHex(peasant.position, hex));
 
           const tileFill = getTileFill(owner);
-          const strokeColor = isReachable ? rangeStroke : neutralStroke;
-          const strokeWidth = isReachable ? 3 : isPreview ? 3.5 : 1.2;
+          const isDeploymentHighlight = isDeploymentPhase
+            && !gameState.deploymentReady[localPlayerColour]
+            && isHexInDeploymentZone(localPlayerColour, hex);
+          const deploymentBorderColor = isDeploymentHighlight ? playerTheme[localPlayerColour].dark : neutralStroke;
+          const strokeColor = isReachable ? rangeStroke : deploymentBorderColor;
+          const strokeWidth = isReachable ? 3.4 : isPreview ? 3 : isDeploymentHighlight ? 3 : 1.7;
 
           return (
             <g
@@ -388,18 +531,18 @@ const HexPrototypeGame = () => {
                 <g transform={`translate(${center.x} ${center.y})`}>
                   {unitOnHex.unitType === 'knight' ? (
                     <polygon
-                      points="0,-15 15,14 -15,14"
+                      points="0,-18 18,16 -18,16"
                       fill={playerTheme[unitOnHex.player].base}
-                      stroke={selectedUnit?.id === unitOnHex.id ? '#f6f2ed' : '#f5efe8'}
-                      strokeWidth={selectedUnit?.id === unitOnHex.id ? 4 : 3}
+                      stroke={selectedUnit?.id === unitOnHex.id ? playerTheme[unitOnHex.player].dark : '#111111'}
+                      strokeWidth={selectedUnit?.id === unitOnHex.id ? 3.2 : 2.4}
                       opacity={unitOnHex.movementLeft === 0 ? 0.7 : 1}
                     />
                   ) : (
                     <circle
                       r={13}
                       fill={playerTheme[unitOnHex.player].base}
-                      stroke={selectedUnit?.id === unitOnHex.id ? '#f6f2ed' : '#f5efe8'}
-                      strokeWidth={selectedUnit?.id === unitOnHex.id ? 4 : 3}
+                      stroke={selectedUnit?.id === unitOnHex.id ? playerTheme[unitOnHex.player].dark : '#111111'}
+                      strokeWidth={selectedUnit?.id === unitOnHex.id ? 3.2 : 2.4}
                       opacity={unitOnHex.movementLeft === 0 ? 0.7 : 1}
                     />
                   )}

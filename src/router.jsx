@@ -1,12 +1,12 @@
 import React, { Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
-import Homepage from './pages/Homepage.tsx';
-import ImagesPage from './pages/ImagesPage.tsx';
-import CrudPage from './pages/CrudPage.tsx';
-import ToDoPage from './pages/toDoPage.tsx';
-import CardsAndScrollsPage from './pages/CardsAndScrollsPage.tsx';
-import ButtonsPage from './pages/ButtonsPage.tsx';
+import Homepage from './pages/Homepage';
+import ImagesPage from './pages/ImagesPage';
+import CrudPage from './pages/CrudPage';
+import ToDoPage from './pages/toDoPage';
+import CardsAndScrollsPage from './pages/CardsAndScrollsPage';
+import ButtonsPage from './pages/ButtonsPage';
 
 const GamesPage = React.lazy(() => import('./pages/GamesPage.tsx'));
 

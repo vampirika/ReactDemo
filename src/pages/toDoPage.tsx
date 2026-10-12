@@ -1,5 +1,5 @@
 import './todoPage.css';
-import ToDoList from '../components/ToDoListComponent.tsx';
+import ToDoList from '../components/ToDoListComponent';
 import React from 'react';
 
 

@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './header.css';
 import { Link } from 'react-router-dom';
-import ThemeToggle from '../components/ThemeToggle.tsx';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Header = () => {
   const [isRevealed, setIsRevealed] = useState(false);

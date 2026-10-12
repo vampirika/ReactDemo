@@ -3,8 +3,8 @@ import React, { useState, useRef } from 'react';
 const HoldButtonProgress = () => {
   const [isHolding, setIsHeld] = useState(false);
   const [progress, setProgress] = useState(0);
-  const holdTimeout = useRef(0);
-  const interval = useRef(0);
+  const holdTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleMouseDown = () => {
     setIsHeld(true);

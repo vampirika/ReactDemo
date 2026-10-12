@@ -16,7 +16,7 @@ export type Peasant = {
   moved: boolean;
 };
 
-export type GameStatus = 'playing' | 'finished';
+export type GameStatus = 'deploying' | 'playing' | 'finished';
 
 export type GameState = {
   currentPlayer: PlayerColor;
@@ -26,6 +26,7 @@ export type GameState = {
   tiles: Record<string, TileOwner>;
   castles: Record<PlayerColor, HexCoord>;
   peasants: Record<PlayerColor, Peasant[]>;
+  deploymentReady: Record<PlayerColor, boolean>;
   winner: PlayerColor | 'tie' | null;
   winnerMessage: string;
 };
@@ -34,6 +35,7 @@ export const BOARD_RADIUS = 5;
 export const MAX_ROUNDS = 10;
 export const MAX_PEASANT_MOVEMENT = 2;
 export const MAX_KNIGHT_MOVEMENT = 3;
+export const DEPLOYMENT_RANGE = 2;
 
 export const coordKey = ({ q, r }: HexCoord) => `${q},${r}`;
 
@@ -110,6 +112,49 @@ export const getPeasantAtHex = (state: GameState, hex: HexCoord, ignoreId?: stri
   return null;
 };
 
+export const rebuildBoardTiles = (state: GameState) => {
+  const tiles = buildBoardTiles();
+
+  Object.values(state.castles).forEach((castle, index) => {
+    const owner = index === 0 ? 'blue' : 'red';
+    tiles[coordKey(castle)] = owner;
+  });
+
+  (['blue', 'red'] as PlayerColor[]).forEach((player) => {
+    state.peasants[player].forEach((unit) => {
+      tiles[coordKey(unit.position)] = player;
+    });
+  });
+
+  return tiles;
+};
+
+export const getDeploymentTargets = (player: PlayerColor, castleOverride?: HexCoord): HexCoord[] => {
+  const castle = castleOverride ?? { blue: { q: -5, r: 0 }, red: { q: 5, r: 0 } }[player];
+
+  return getBoardHexes().filter((hex) => {
+    const distance = getHexDistance(castle, hex);
+    return distance <= DEPLOYMENT_RANGE && !areSameHex(castle, hex);
+  });
+};
+
+export const isHexInDeploymentZone = (player: PlayerColor, hex: HexCoord) => getDeploymentTargets(player).some((target) => areSameHex(target, hex));
+
+export const getNearestDeploymentHexes = (player: PlayerColor): HexCoord[] => {
+  const castle = ({ blue: { q: -5, r: 0 }, red: { q: 5, r: 0 } } as Record<PlayerColor, HexCoord>)[player];
+
+  return getBoardHexes()
+    .filter((hex) => !areSameHex(hex, castle) && getHexDistance(hex, castle) <= DEPLOYMENT_RANGE)
+    .sort((a, b) => {
+      const distanceDelta = getHexDistance(castle, a) - getHexDistance(castle, b);
+      if (distanceDelta !== 0) {
+        return distanceDelta;
+      }
+
+      return a.q - b.q || a.r - b.r;
+    });
+};
+
 export const createInitialGameState = (): GameState => {
   const tiles = buildBoardTiles();
   const castles: Record<PlayerColor, HexCoord> = {
@@ -149,9 +194,94 @@ export const createInitialGameState = (): GameState => {
     tiles,
     castles,
     peasants,
+    deploymentReady: { blue: false, red: false },
     winner: null,
     winnerMessage: '',
   };
+};
+
+export const createDeploymentGameState = (): GameState => {
+  const state = createInitialGameState();
+
+  const castles: Record<PlayerColor, HexCoord> = {
+    blue: { q: -5, r: 0 },
+    red: { q: 5, r: 0 },
+  };
+
+  const nextPeasants: Record<PlayerColor, Peasant[]> = {
+    blue: [],
+    red: [],
+  };
+
+  (['blue', 'red'] as PlayerColor[]).forEach((player) => {
+    const orderedHexes = getNearestDeploymentHexes(player);
+    const peasantUnits = state.peasants[player].filter((unit) => unit.unitType === 'peasant');
+    const knightUnit = state.peasants[player].find((unit) => unit.unitType === 'knight');
+
+    nextPeasants[player] = [
+      {
+        ...peasantUnits[0],
+        position: orderedHexes[0] ?? castles[player],
+        movementLeft: MAX_PEASANT_MOVEMENT,
+        moved: false,
+      },
+      {
+        ...knightUnit,
+        position: orderedHexes[1] ?? castles[player],
+        movementLeft: MAX_KNIGHT_MOVEMENT,
+        moved: false,
+      },
+      {
+        ...peasantUnits[1],
+        position: orderedHexes[2] ?? castles[player],
+        movementLeft: MAX_PEASANT_MOVEMENT,
+        moved: false,
+      },
+    ].filter(Boolean) as Peasant[];
+  });
+
+  const nextState: GameState = {
+    ...state,
+    status: 'deploying',
+    tiles: rebuildBoardTiles({
+      ...state,
+      castles,
+      peasants: nextPeasants,
+    }),
+    castles,
+    peasants: nextPeasants,
+    deploymentReady: { blue: false, red: false },
+  };
+
+  return nextState;
+};
+
+export const beginMatchAfterDeployment = (state: GameState): GameState => {
+  const nextState: GameState = {
+    ...state,
+    status: 'playing',
+    currentPlayer: 'blue',
+    roundNumber: 1,
+    totalTurns: 0,
+    winner: null,
+    winnerMessage: '',
+    deploymentReady: { blue: false, red: false },
+    peasants: {
+      blue: state.peasants.blue.map((unit) => ({
+        ...unit,
+        movementLeft: unit.unitType === 'knight' ? MAX_KNIGHT_MOVEMENT : MAX_PEASANT_MOVEMENT,
+        moved: false,
+      })),
+      red: state.peasants.red.map((unit) => ({
+        ...unit,
+        movementLeft: unit.unitType === 'knight' ? MAX_KNIGHT_MOVEMENT : MAX_PEASANT_MOVEMENT,
+        moved: false,
+      })),
+    },
+  };
+
+  nextState.tiles = rebuildBoardTiles(nextState);
+  return nextState;
 };
 
 export const countTerritory = (state: GameState) => {
@@ -354,6 +484,50 @@ export const determineWinner = (state: GameState) => {
   };
 };
 
+export const hasAnyLegalMovesForPlayer = (state: GameState, player: PlayerColor) =>
+  state.peasants[player].some((unit) => unit.movementLeft > 0 && getReachableTiles(state, player, unit.id).length > 0);
+
+export const applyDeploymentMove = (state: GameState, unitId: string, destination: HexCoord): GameState => {
+  const unit = [...state.peasants.blue, ...state.peasants.red].find((candidate) => candidate.id === unitId);
+  if (!unit) {
+    return state;
+  }
+
+  if (state.status !== 'deploying' || !isHexInDeploymentZone(unit.player, destination)) {
+    return state;
+  }
+
+  const occupiedByOther = [...state.peasants.blue, ...state.peasants.red].find(
+    (candidate) => candidate.id !== unitId && areSameHex(candidate.position, destination),
+  );
+  if (occupiedByOther) {
+    return state;
+  }
+
+  const nextState: GameState = {
+    ...state,
+    tiles: { ...state.tiles },
+    peasants: {
+      blue: state.peasants.blue.map((candidate) => ({ ...candidate })),
+      red: state.peasants.red.map((candidate) => ({ ...candidate })),
+    },
+    castles: { ...state.castles },
+    deploymentReady: { ...state.deploymentReady },
+    winner: null,
+    winnerMessage: '',
+  };
+
+  const updatedUnit = nextState.peasants[unit.player].find((candidate) => candidate.id === unitId);
+  if (!updatedUnit) {
+    return state;
+  }
+
+  updatedUnit.position = destination;
+  nextState.tiles = rebuildBoardTiles(nextState);
+
+  return nextState;
+};
+
 export const applyMove = (state: GameState, peasantId: string, destination: HexCoord, plannedPath?: HexCoord[]): GameState => {
   if (state.status === 'finished') {
     return state;
@@ -402,6 +576,10 @@ export const applyMove = (state: GameState, peasantId: string, destination: HexC
   updatedPeasant.movementLeft = Math.max(0, updatedPeasant.movementLeft - distanceTraveled);
   updatedPeasant.moved = updatedPeasant.movementLeft === 0;
 
+  if (!hasAnyLegalMovesForPlayer(nextState, nextState.currentPlayer)) {
+    return endTurn(nextState);
+  }
+
   return nextState;
 };
 
@@ -429,6 +607,7 @@ export const endTurn = (state: GameState): GameState => {
     },
     currentPlayer: nextPlayer,
     totalTurns: state.totalTurns + 1,
+    deploymentReady: { blue: false, red: false },
     winner: null,
     winnerMessage: '',
   };
