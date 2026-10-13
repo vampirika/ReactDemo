@@ -136,6 +136,7 @@ const getTileFill = (owner: GameState['tiles'][string] | undefined) => {
 type HexPrototypeGameProps = {
   initialGameState?: GameState;
   playerColour?: PlayerColor;
+  allowBothPlayers?: boolean;
   roomId?: string;
   onGameStateChange?: (nextState: GameState) => void | Promise<void>;
   onLeaveRoom?: () => void;
@@ -144,40 +145,46 @@ type HexPrototypeGameProps = {
 const HexPrototypeGame = ({
   initialGameState = createInitialGameState(),
   playerColour,
+  allowBothPlayers = false,
   roomId,
   onGameStateChange,
   onLeaveRoom,
 }: HexPrototypeGameProps) => {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>('blue-peasant-1');
+  const [deploymentPlayerColour, setDeploymentPlayerColour] = useState<PlayerColor>(playerColour ?? 'blue');
   const [hoveredHex, setHoveredHex] = useState<HexCoord | null>(null);
   const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setGameState(initialGameState);
-    const desiredPlayer = initialGameState.status === 'deploying' ? (playerColour ?? 'blue') : initialGameState.currentPlayer;
+    const desiredPlayer = initialGameState.status === 'deploying'
+      ? (allowBothPlayers ? deploymentPlayerColour : playerColour ?? 'blue')
+      : initialGameState.currentPlayer;
     const firstUsableUnit = initialGameState.peasants[desiredPlayer].find((peasant) => peasant.movementLeft > 0)?.id ?? null;
     setSelectedUnitId(firstUsableUnit);
-  }, [initialGameState, playerColour]);
+  }, [allowBothPlayers, deploymentPlayerColour, initialGameState, playerColour]);
 
   const boardHexes = useMemo(() => getBoardHexes(), []);
   const currentPlayer = gameState.currentPlayer;
   const localPlayerColour = playerColour ?? currentPlayer;
   const isDeploymentPhase = gameState.status === 'deploying';
-  const isLocalTurn = !isDeploymentPhase && currentPlayer === localPlayerColour;
-  const activePlayer = isDeploymentPhase ? localPlayerColour : currentPlayer;
+  const isLocalTurn = !isDeploymentPhase && (allowBothPlayers || currentPlayer === localPlayerColour);
+  const activePlayer = isDeploymentPhase
+    ? (allowBothPlayers ? deploymentPlayerColour : localPlayerColour)
+    : currentPlayer;
   const selectedUnit = useMemo(
     () => gameState.peasants[activePlayer].find((peasant) => peasant.id === selectedUnitId) ?? null,
     [activePlayer, gameState.peasants, selectedUnitId],
   );
   const routeColor = selectedUnit ? playerTheme[selectedUnit.player].dark : '#614b3a';
-  const localPlayerUnits = gameState.peasants[localPlayerColour];
-  const hasAllUnitsPlaced = localPlayerUnits.every((unit) => isHexInDeploymentZone(localPlayerColour, unit.position));
+  const deploymentUnits = gameState.peasants[activePlayer];
+  const hasAllUnitsPlaced = deploymentUnits.every((unit) => isHexInDeploymentZone(activePlayer, unit.position));
   const visibleUnits = useMemo(
     () => Object.values(gameState.peasants)
       .flat()
-      .filter((unit) => !isDeploymentPhase || unit.player === localPlayerColour),
-    [gameState.peasants, isDeploymentPhase, localPlayerColour],
+      .filter((unit) => !isDeploymentPhase || allowBothPlayers || unit.player === localPlayerColour),
+    [allowBothPlayers, gameState.peasants, isDeploymentPhase, localPlayerColour],
   );
 
   const reachableTiles = useMemo(() => {
@@ -236,7 +243,12 @@ const HexPrototypeGame = ({
   };
 
   const handleDeploy = () => {
-    if (!isDeploymentPhase || gameState.status !== 'deploying' || !hasAllUnitsPlaced) {
+    if (
+      !isDeploymentPhase
+      || gameState.status !== 'deploying'
+      || !hasAllUnitsPlaced
+      || gameState.deploymentReady[activePlayer]
+    ) {
       return;
     }
 
@@ -244,7 +256,7 @@ const HexPrototypeGame = ({
       ...gameState,
       deploymentReady: {
         ...gameState.deploymentReady,
-        [localPlayerColour]: true,
+        [activePlayer]: true,
       },
     };
 
@@ -253,6 +265,15 @@ const HexPrototypeGame = ({
       const nextSelection = startedGame.peasants.blue.find((peasant) => peasant.movementLeft > 0)?.id ?? null;
       setSelectedUnitId(nextSelection);
       applyStateUpdate(startedGame);
+      return;
+    }
+
+    if (allowBothPlayers) {
+      const nextDeploymentPlayer: PlayerColor = activePlayer === 'blue' ? 'red' : 'blue';
+      setDeploymentPlayerColour(nextDeploymentPlayer);
+      const nextSelection = nextState.peasants[nextDeploymentPlayer].find((unit) => unit.movementLeft > 0) ?? null;
+      setSelectedUnitId(nextSelection?.id ?? null);
+      applyStateUpdate(nextState);
       return;
     }
 
@@ -269,20 +290,23 @@ const HexPrototypeGame = ({
       const clickedUnit = visibleUnits.find((unit) => areSameHex(unit.position, destination));
 
       if (clickedUnit) {
+        if (clickedUnit.player !== activePlayer) {
+          return;
+        }
         setSelectedUnitId(clickedUnit.id);
         setHoveredHex(null);
         setHoverPoint(null);
         return;
       }
 
-      if (!selectedUnit || selectedUnit.player !== localPlayerColour) {
-        const nextSelection = localPlayerUnits.find((unit) => isHexInDeploymentZone(localPlayerColour, unit.position)) ?? null;
+      if (!selectedUnit || selectedUnit.player !== activePlayer) {
+        const nextSelection = deploymentUnits.find((unit) => isHexInDeploymentZone(activePlayer, unit.position)) ?? null;
         setSelectedUnitId(nextSelection ? nextSelection.id : null);
         setHoverPoint(null);
         return;
       }
 
-      if (!isHexInDeploymentZone(localPlayerColour, destination)) {
+      if (!isHexInDeploymentZone(activePlayer, destination)) {
         return;
       }
 
@@ -366,7 +390,12 @@ const HexPrototypeGame = ({
   const handleRestart = () => {
     const freshGame = createDeploymentGameState();
     setGameState(freshGame);
-    setSelectedUnitId(null);
+    if (allowBothPlayers) {
+      setDeploymentPlayerColour('blue');
+      setSelectedUnitId(freshGame.peasants.blue[0]?.id ?? null);
+    } else {
+      setSelectedUnitId(null);
+    }
     setHoveredHex(null);
     setHoverPoint(null);
     if (onGameStateChange) {
@@ -415,7 +444,9 @@ const HexPrototypeGame = ({
           <div className="status-banner finished">{gameState.winnerMessage || 'Game over.'}</div>
         ) : gameState.status === 'deploying' ? (
           <div className="status-banner">
-            Deploy your force within two hexes of your castle. Choose each unit and click an open highlighted tile.
+            {allowBothPlayers
+              ? `Solo test: deploy ${playerTheme[activePlayer].label}'s force within two hexes of the castle.`
+              : 'Deploy your force within two hexes of your castle. Choose each unit and click an open highlighted tile.'}
           </div>
         ) : (
           <div className="status-banner">
@@ -433,9 +464,9 @@ const HexPrototypeGame = ({
               type="button"
               className="end-turn-button"
               onClick={handleDeploy}
-              disabled={!hasAllUnitsPlaced || gameState.deploymentReady[localPlayerColour]}
+              disabled={!hasAllUnitsPlaced || gameState.deploymentReady[activePlayer]}
             >
-              {gameState.deploymentReady[localPlayerColour] ? 'Deployed' : 'Deploy'}
+              {gameState.deploymentReady[activePlayer] ? `${playerTheme[activePlayer].label} deployed` : `Deploy ${playerTheme[activePlayer].label}`}
             </button>
           ) : (
             <button
@@ -463,9 +494,9 @@ const HexPrototypeGame = ({
 
           const tileFill = getTileFill(owner);
           const isDeploymentHighlight = isDeploymentPhase
-            && !gameState.deploymentReady[localPlayerColour]
-            && isHexInDeploymentZone(localPlayerColour, hex);
-          const deploymentBorderColor = isDeploymentHighlight ? playerTheme[localPlayerColour].dark : neutralStroke;
+            && !gameState.deploymentReady[activePlayer]
+            && isHexInDeploymentZone(activePlayer, hex);
+          const deploymentBorderColor = isDeploymentHighlight ? playerTheme[activePlayer].dark : neutralStroke;
           const strokeColor = isReachable ? rangeStroke : deploymentBorderColor;
           const strokeWidth = isReachable ? 3.4 : isPreview ? 3 : isDeploymentHighlight ? 3 : 1.7;
 

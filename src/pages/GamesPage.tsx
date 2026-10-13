@@ -21,10 +21,12 @@ type GameRoom = {
   hostId: string;
   players: Record<string, RoomPlayer>;
   gameState?: GameState;
+  testMode?: boolean;
 };
 
 const PLAYER_KEY = 'border-siege-player-id';
 const ROOM_KEY_PREFIX = 'border-siege-room';
+const SOLO_TEST_ROOM_ID = 'VAMP66';
 
 const getOrCreatePlayerId = () => {
   const stored = window.localStorage.getItem(PLAYER_KEY);
@@ -81,6 +83,16 @@ const GamesPage = () => {
       return;
     }
 
+    if (room.testMode) {
+      setRoom(null);
+      setGameStarted(false);
+      setError('');
+      if (!silent) {
+        setMessage('You left the test room.');
+      }
+      return;
+    }
+
     const nextPlayers = { ...room.players };
     delete nextPlayers[localPlayerId];
 
@@ -121,7 +133,7 @@ const GamesPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!room?.roomId || !hasFirebaseConfig || !firebaseDb) {
+    if (!room?.roomId || room.testMode || !hasFirebaseConfig || !firebaseDb) {
       return undefined;
     }
 
@@ -143,7 +155,7 @@ const GamesPage = () => {
     return () => {
       unsubscribe();
     };
-  }, [room?.roomId, localPlayerId]);
+  }, [room?.roomId, room?.testMode, localPlayerId]);
 
   useEffect(() => {
     setGameStarted(Boolean(room && room.status !== 'waiting'));
@@ -205,6 +217,32 @@ const GamesPage = () => {
 
     if (!roomId) {
       setError('Enter a room code first.');
+      return;
+    }
+
+    if (roomId === SOLO_TEST_ROOM_ID) {
+      const testRoom: GameRoom = {
+        roomId: SOLO_TEST_ROOM_ID,
+        status: 'deploying',
+        createdAt: Date.now(),
+        hostId: playerId,
+        players: {
+          [playerId]: {
+            id: playerId,
+            colour: 'blue',
+            ready: true,
+            joinedAt: Date.now(),
+          },
+        },
+        gameState: createDeploymentGameState(),
+        testMode: true,
+      };
+
+      setRoom(testRoom);
+      setLocalPlayerId(playerId);
+      setSelectedColour('blue');
+      setError('');
+      setMessage('Solo test room started. You control both Blue and Red.');
       return;
     }
 
@@ -297,9 +335,12 @@ const GamesPage = () => {
 
     setRoom(nextRoom);
     setGameStarted(nextRoom.status === 'deploying' || nextRoom.status === 'playing');
-    persistRoom(nextRoom);
 
-    if (hasFirebaseConfig && firebaseDb) {
+    if (!room.testMode) {
+      persistRoom(nextRoom);
+    }
+
+    if (hasFirebaseConfig && firebaseDb && !room.testMode) {
       await set(ref(firebaseDb, `rooms/${room.roomId}`), nextRoom);
     }
   };
@@ -437,6 +478,7 @@ const GamesPage = () => {
               initialGameState={room.gameState ?? createInitialGameState()}
               roomId={room.roomId}
               playerColour={room.players[localPlayerId]?.colour ?? selectedColour}
+              allowBothPlayers={room.testMode}
               onGameStateChange={syncRoomGameState}
               onLeaveRoom={() => { void leaveRoom(false); }}
             />
